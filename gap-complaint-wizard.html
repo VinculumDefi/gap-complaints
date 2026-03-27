@@ -822,7 +822,7 @@ function buildWizardNav(){
     else if(i+1<currentStep) cls+=' done';
     tab.className=cls;
     tab.innerHTML='<div class="wz-num">'+(i+1<currentStep?'&#10003;':(i+1))+'</div><span class="wz-label">'+s.label+'</span>';
-    (function(step){tab.addEventListener('click',function(){if(step<=currentStep) goToStep(step);});})(i+1);
+    (function(step){tab.addEventListener('click',function(){goToStep(step);});})(i+1);
     nav.appendChild(tab);
   });
 }
