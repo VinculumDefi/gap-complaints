@@ -817,28 +817,65 @@ var currentStep=1;
 // Track validation status per step: null=unvisited, true=valid, false=invalid
 var stepStatus = {1:null,2:null,3:null,4:null,5:null,6:null};
 
-// Required fields per step — map step number to field names or selectors
+// Required fields per step — explicit field names so disabled/hidden fields don't confuse things
+var STEP_REQUIRED_FIELDS = {
+  1: ['agent_name','call_datetime','customer_name'],
+  2: ['project_name','product_type'],
+  3: [],   // issue cards validated separately below
+  4: ['ca_action_type','ca_responsible_party'],
+  5: [],
+  6: []
+};
+
 function getStepRequiredFields(step){
   var panel = document.getElementById('step-'+step);
   if(!panel) return [];
-  return Array.from(panel.querySelectorAll('[required]'));
+  // Use explicit list if defined, otherwise fall back to [required] scan (skipping disabled)
+  var names = STEP_REQUIRED_FIELDS[step];
+  if(names && names.length>0){
+    return names.map(function(n){
+      return panel.querySelector('[name="'+n+'"]');
+    }).filter(function(el){return el && !el.disabled;});
+  }
+  // Fallback: scan [required] but skip disabled
+  return Array.from(panel.querySelectorAll('[required]')).filter(function(el){return !el.disabled;});
 }
 
 function validateStep(step){
   var fields = getStepRequiredFields(step);
   var valid = true;
+
   fields.forEach(function(el){
-    if(!el.value || !el.value.trim()){
+    var val = (el.value || '').trim();
+    if(!val){
       el.style.borderColor='var(--rust)';
       valid=false;
     } else {
       el.style.borderColor='';
     }
   });
-  // Also check priority on step 1
+
+  // Step 1: also require priority
   if(step===1 && !document.getElementById('priority-val').value){
     valid=false;
   }
+
+  // Step 3: require at least L1/L2/L3 on every issue card
+  if(step===3){
+    var count=parseInt(document.getElementById('issue-count').value)||1;
+    for(var i=1;i<=count;i++){
+      var l1=document.querySelector('[name="issue_'+i+'_l1"]');
+      var l2=document.querySelector('[name="issue_'+i+'_l2"]');
+      var l3=document.querySelector('[name="issue_'+i+'_l3"]');
+      var desc=document.querySelector('[name="issue_'+i+'_desc"]');
+      [l1,l2,l3,desc].forEach(function(el){
+        if(el && !el.disabled && !(el.value||'').trim()){
+          el.style.borderColor='var(--rust)'; valid=false;
+        } else if(el){ el.style.borderColor=''; }
+      });
+    }
+  }
+
   stepStatus[step] = valid;
   return valid;
 }
@@ -914,7 +951,8 @@ function wizardNext(){
       var panel2=document.getElementById('step-'+currentStep);
       panel2.appendChild(msg);
     }
-    var missingCount = fields.filter(function(f){return !f.value||!f.value.trim();}).length;
+    var allRequired = Array.from(panel.querySelectorAll('[required]')).filter(function(f){return !f.disabled;});
+    var missingCount = allRequired.filter(function(f){return !(f.value||'').trim();}).length;
     var priorityMissing = (currentStep===1 && !document.getElementById('priority-val').value);
     msg.innerHTML='&#9888; &nbsp;Please complete all required fields before continuing. '+
       (priorityMissing?'<br>Priority must be selected.':'')+
