@@ -1059,34 +1059,38 @@ function fillSelect(sel,opts,placeholder){
 }
 
 function rewireL1(card,n){
-  const l1=card.querySelector(`[name="issue_${n}_l1"]`);
-  const l2=card.querySelector(`[name="issue_${n}_l2"]`);
-  const l3=card.querySelector(`[name="issue_${n}_l3"]`);
-  // Remove old listeners by cloning
-  const l1c=l1.cloneNode(true); l1.parentNode.replaceChild(l1c,l1);
-  const l2c=l2.cloneNode(true); l2.parentNode.replaceChild(l2c,l2);
-  const l3c=l3.cloneNode(true); l3.parentNode.replaceChild(l3c,l3);
+  var l1=card.querySelector('[name="issue_'+n+'_l1"]');
+  var l2=card.querySelector('[name="issue_'+n+'_l2"]');
+  var l3=card.querySelector('[name="issue_'+n+'_l3"]');
+  var l1c=l1.cloneNode(true); l1.parentNode.replaceChild(l1c,l1);
+  var l2c=l2.cloneNode(true); l2.parentNode.replaceChild(l2c,l2);
+  var l3c=l3.cloneNode(true); l3.parentNode.replaceChild(l3c,l3);
   wireL1(card,n);
 }
 
 function wireL1(card,n){
-  const tax=getTaxonomy();
-  const l1=card.querySelector(`[name="issue_${n}_l1"]`);
-  const l2=card.querySelector(`[name="issue_${n}_l2"]`);
-  const l3=card.querySelector(`[name="issue_${n}_l3"]`);
-  l1.addEventListener('change',()=>{
-    fillSelect(l2,l1.value?Object.keys(tax[l1.value]||{]):[],'— Select Type —');
-    fillSelect(l3,[],'— Select Detail —');
+  var tax=getTaxonomy();
+  var l1=card.querySelector('[name="issue_'+n+'_l1"]');
+  var l2=card.querySelector('[name="issue_'+n+'_l2"]');
+  var l3=card.querySelector('[name="issue_'+n+'_l3"]');
+  l1.addEventListener('change',function(){
+    var l2opts=(l1.value && tax[l1.value]) ? Object.keys(tax[l1.value]) : [];
+    fillSelect(l2, l2opts, '-- Select Type --');
+    fillSelect(l3, [], '-- Select Detail --');
     l2.disabled=!l1.value; l3.disabled=true;
   });
-  l2.addEventListener('change',()=>{
-    const opts=l2.value&&l1.value?(tax[l1.value]&&tax[l1.value][l2.value]?tax[l1.value][l2.value]:[]):[];
-    fillSelect(l3,opts,'— Select Detail —');
+  l2.addEventListener('change',function(){
+    var l3opts=[];
+    if(l2.value && l1.value && tax[l1.value] && tax[l1.value][l2.value]){
+      l3opts=tax[l1.value][l2.value];
+    }
+    fillSelect(l3, l3opts, '-- Select Detail --');
     l3.disabled=!l2.value;
   });
-  fillSelect(l1,Object.keys(tax),'— Select Family —');
+  fillSelect(l1, Object.keys(tax), '-- Select Family --');
   l2.disabled=true; l3.disabled=true;
 }
+
 
 // ── Build issue card ──────────────────────────────────────────────────
 function buildIssueCard(n){
