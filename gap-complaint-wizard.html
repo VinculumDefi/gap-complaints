@@ -954,48 +954,53 @@ function goToStep(n){
 function wizardNext(){
   if(currentStep===STEPS.length){ submitForm(); return; }
 
-  // Validate current step
   var valid = validateStep(currentStep);
-  buildWizardNav(); // update tab indicators immediately
+  buildWizardNav();
 
   if(!valid){
-    // Scroll to first invalid field
     var panel = document.getElementById('step-'+currentStep);
-    var firstBad = panel.querySelector('[required]');
-    // Find first actually empty required field
-    var fields = getStepRequiredFields(currentStep);
-    for(var i=0;i<fields.length;i++){
-      if(!fields[i].value||!fields[i].value.trim()){firstBad=fields[i];break;}
-    }
-    if(firstBad) firstBad.scrollIntoView({behavior:'smooth',block:'center'});
 
-    // Show inline error message
+    // Highlight priority buttons if missing on step 1
+    var priorityMissing = (currentStep===1 && !document.getElementById('priority-val').value);
+    var priorityWrap = document.querySelector('.priority-strip');
+    if(priorityMissing && priorityWrap){
+      priorityWrap.style.outline='3px solid var(--rust)';
+      setTimeout(function(){priorityWrap.style.outline='';},3000);
+    }
+
+    // Build error message
+    var allRequired = Array.from(panel.querySelectorAll('[required]')).filter(function(f){return !f.disabled;});
+    var emptyFields = allRequired.filter(function(f){return !(f.value||'').trim();});
+    var missingCount = emptyFields.length + (priorityMissing?1:0);
+
+    // Show error message
     var msg = document.getElementById('step-error-'+currentStep);
     if(!msg){
       msg=document.createElement('div');
       msg.id='step-error-'+currentStep;
       msg.style.cssText='background:rgba(181,76,47,.08);border:1px solid var(--rust);color:var(--rust);border-radius:7px;padding:12px 16px;font-size:13px;margin-top:16px;';
-      var panel2=document.getElementById('step-'+currentStep);
-      panel2.appendChild(msg);
+      panel.appendChild(msg);
     }
-    var allRequired = Array.from(panel.querySelectorAll('[required]')).filter(function(f){return !f.disabled;});
-    var missingCount = allRequired.filter(function(f){return !(f.value||'').trim();}).length;
-    var priorityMissing = (currentStep===1 && !document.getElementById('priority-val').value);
-    msg.innerHTML='&#9888; &nbsp;Please complete all required fields before continuing. '+
-      (priorityMissing?'<br>Priority must be selected.':'')+
-      ' <strong>'+missingCount+' field'+(missingCount!==1?'s':'')+' still needed.</strong>';
+    var parts = [];
+    if(emptyFields.length>0) parts.push(emptyFields.length+' required field'+(emptyFields.length!==1?'s':'')+' below need'+(emptyFields.length===1?'s':'')+' to be filled in');
+    if(priorityMissing) parts.push('Priority must be selected in the header bar above');
+    msg.innerHTML='&#9888; &nbsp;'+parts.join(' &nbsp;+&nbsp; ')+'.';
     msg.style.display='block';
+
+    // Scroll to first empty required field, or to top of step if only priority missing
+    if(emptyFields.length>0){
+      emptyFields[0].scrollIntoView({behavior:'smooth',block:'center'});
+    } else {
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
     return;
   }
 
-  // Clear any error message
+  // Valid — clear error and advance
   var errMsg = document.getElementById('step-error-'+currentStep);
   if(errMsg) errMsg.style.display='none';
 
-  // Special: show case number toast when leaving step 1
-  if(currentStep===1){
-    showCaseToast();
-  }
+  if(currentStep===1) showCaseToast();
 
   goToStep(currentStep+1);
 }
