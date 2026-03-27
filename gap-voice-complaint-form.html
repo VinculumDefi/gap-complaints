@@ -382,21 +382,324 @@
 
 <script>
 // ════════════════════════════════════════════════════════════════════
-// TAXONOMY — Default seed data. Extended via Admin page or guided modal.
+// TAXONOMY — Full commercial window / glazing defect taxonomy.
+// Edit and expand via the Taxonomy Admin page.
 // ════════════════════════════════════════════════════════════════════
 const DEFAULT_TAXONOMY = {
-  "Surface / Cosmetic": {
-    "Scratch": ["Light scratch","Deep scratch"]
+
+  "Assembly & Hardware": {
+    "Missing components": [
+      "Missing fasteners — screws, clips, anchors, rivets absent or not included",
+      "Missing lock/handle set — lock, handle, keeper, or related components missing",
+      "Missing hinge — hinge(s) missing from unit or kit",
+      "Missing gasket/weatherstrip — weatherstrip/gasket absent from required location",
+      "Missing shims/packers — setting blocks, packers, or shims missing",
+      "Missing screen — screen absent from unit",
+      "Missing glazing bead — bead absent from glazing pocket"
+    ],
+    "Wrong components": [
+      "Wrong hardware type — incorrect part family (wrong lock/hinge/handle model)",
+      "Wrong handed hardware — left/right hand orientation incorrect",
+      "Wrong fastener type — wrong length/diameter/head type/material of fastener",
+      "Wrong hardware finish — finish/color does not match frame finish",
+      "Wrong gasket profile — incorrect gasket profile or durometer supplied"
+    ],
+    "Installation/assembly quality": [
+      "Loose hardware — fasteners not tightened to spec; hardware moves",
+      "Cross-threaded fastener — thread damage or incorrect engagement",
+      "Misaligned hardware — hole pattern/positioning causes bind or interference",
+      "Stripped fastener/insert — fastener spins, cannot torque; insert stripped",
+      "Over-torqued fastener — damage from excess torque",
+      "Hardware installed upside down or backwards"
+    ],
+    "Functional hardware issue": [
+      "Lock does not latch — latch/keeper alignment or assembly issue prevents latching",
+      "Handle/hinge binds — operation stiff/binds due to misassembly or interference",
+      "Lock/handle failure — hardware broken, missing function, or incorrect assembly",
+      "Panic hardware malfunction — panic device does not operate correctly",
+      "Door closer malfunction — closer does not control speed or close fully",
+      "Sash falls open — no hold-open or stay arm present"
+    ]
   },
-  "Dimensional / Fit / Function": {
-    "Out of tolerance": ["Length out"]
+
+  "Glass & Glazing": {
+    "Glass damage": [
+      "Scratched glass — visible scratch/scuff on glass surface",
+      "Broken/cracked glass — crack, chip, or shatter present on arrival or in-field",
+      "Edge chip — chip at glass edge, often from handling or setting",
+      "Stress crack — crack from thermal or installation stress",
+      "Impact crack — crack from point impact",
+      "Shattered pane — full breakage"
+    ],
+    "Optical quality": [
+      "Distortion — roller wave visible in glass",
+      "Anisotropy/quench marks — iridescent stress marks in tempered glass",
+      "Haze or milky appearance — coating or glass haze",
+      "Bubbles or seeds — inclusions in glass body",
+      "Insufficient clarity — visible optical defect affecting view"
+    ],
+    "IGU issues": [
+      "Fogging/condensation — moisture between panes indicating IG seal failure",
+      "Seal failure (IGU) — IGU perimeter seal compromised; may include argon loss",
+      "Desiccant failure — desiccant saturated; fogging result",
+      "Broken spacer bar — spacer damaged or separated",
+      "Low-E coating damage — coating visibly damaged or delaminated",
+      "Wrong spacer/grid — incorrect spacer color/size or grid pattern"
+    ],
+    "Glazing assembly": [
+      "Wrong glass type — incorrect thickness/tint/lamination/tempered vs annealed",
+      "Setting block missing/misplaced — blocks missing, wrong durometer, or misplaced",
+      "Glazing bead damaged/missing — bead cracked, missing, or not fully seated",
+      "Sealant void/skip — sealant missing/voids around glass or glazing pocket",
+      "Glass not fully seated in pocket — glass high or tilted in frame",
+      "Glass installed wrong orientation — Low-E surface on wrong face",
+      "Wrong glass installed — different unit than specified"
+    ],
+    "Laminated glass": [
+      "Interlayer delamination — PVB/SGP separating from glass",
+      "Interlayer bubbles — air pockets in laminate interlayer",
+      "Edge delamination — delamination at glass edge"
+    ]
   },
-  "Finish / Coating": {
-    "Color mismatch": ["ΔE > spec"]
+
+  "Surface Finish": {
+    "Cosmetic damage": [
+      "Scratched finish — linear scratch through coating/anodize",
+      "Chip/peel — coating chip, peel, or flake",
+      "Dent/ding — substrate deformation visible through finish",
+      "Protective film adhesive residue — film adhesive left on finish",
+      "Overspray on adjacent surface — overspray in unintended area"
+    ],
+    "Appearance & texture": [
+      "Orange peel — uneven texture in coating; excessive orange peel",
+      "Runs/sags — coating run or sag marks",
+      "Fisheyes/craters — contamination causing fisheyes/craters",
+      "Dust/debris in finish — particles trapped in coating",
+      "Pinholes in paint film — small holes through coating layer",
+      "Insufficient tooling/texture — surface texture does not match spec"
+    ],
+    "Color": [
+      "Color mismatch vs standard — color deviates from approved standard or lot",
+      "Shade variation within unit — mismatch between components on same unit",
+      "Color variation — batch-to-batch — color shifts between production runs",
+      "Wrong color/finish supplied — finish on unit does not match PO/order"
+    ],
+    "Coverage": [
+      "Thin/insufficient coverage — bare metal/primer showing; low film build",
+      "Overspray/roughness — overspray causing rough feel or unwanted coating",
+      "Uneven coverage — visible variation in film thickness"
+    ],
+    "Anodize-specific": [
+      "Anodize streaking/banding — visible streaks/bands in anodized surface",
+      "Anodize pitting — pits/porosity visible in anodized finish",
+      "Anodize too light — anodize thinner/lighter than spec",
+      "Anodize too dark — anodize heavier/darker than spec",
+      "Blotchy or uneven anodize — irregular color/sheen in anodize",
+      "Insufficient anodize thickness — below minimum spec"
+    ],
+    "Adhesion": [
+      "Poor adhesion/peeling — coating adhesion failure (tape test fail/peel)",
+      "Clear coat crazing or cracking — top coat failure pattern",
+      "Thermal break debonding — thermal break separating from frame"
+    ]
+  },
+
+  "Dimensional / Fit-Up": {
+    "Wrong part/size": [
+      "Wrong part shipped — incorrect part number shipped vs order",
+      "Wrong size (overall) — incorrect overall size; does not fit opening/spec",
+      "Wrong cut length — extrusion/part cut to wrong length",
+      "Wrong profile/extrusion used — incorrect extrusion series or shape"
+    ],
+    "Tolerance": [
+      "Out of tolerance dimension — measured dimension exceeds tolerance",
+      "Hole location out of tolerance — hole/slot position outside tolerance",
+      "Glass pocket width or depth incorrect — pocket does not meet bite spec",
+      "Wall thickness out of tolerance — frame wall below minimum"
+    ],
+    "Squareness & straightness": [
+      "Not square — frame/assembly not square",
+      "Warp/bow — component warped/bowed beyond spec",
+      "Twist in frame member — torsional distortion in extrusion"
+    ],
+    "Fit": [
+      "Interference/binding fit — parts interfere; tight fit causes assembly/operation issues",
+      "Excessive gaps — gaps exceed spec; may cause leaks or aesthetics issues",
+      "Mismatch between mating parts — mating components do not align or match profiles",
+      "Corner joint gap — corner condition has visible gap",
+      "Corner joint misaligned — miter or butt joint not flush"
+    ]
+  },
+
+  "Sealant / Weatherproofing": {
+    "Sealant application": [
+      "Missing sealant — sealant absent where required",
+      "Insufficient sealant/bead too small — bead size inadequate; poor coverage",
+      "Sealant voids/skips — discontinuous bead; gaps/voids present",
+      "Messy/over-applied sealant — excess squeeze-out; poor aesthetics",
+      "Sealant wrong color — sealant color does not match frame or spec",
+      "Sealant not tooled properly — bead not pressed/tooled to substrate"
+    ],
+    "Sealant cure & adhesion": [
+      "Sealant not cured/tacky — cure incomplete at shipment/installation",
+      "Adhesion failure — sealant separates from substrate; poor prep/compatibility",
+      "Sealant cohesion failure — sealant tears internally"
+    ],
+    "Weatherstrip & gasket": [
+      "Wrong gasket installed — incorrect profile/durometer/length",
+      "Gasket damaged/torn — tear, pinch, or stretch in gasket",
+      "Gasket not fully seated — gasket popped out of groove",
+      "Gasket shrinkage — gasket pulled away from corners"
+    ],
+    "Weep system": [
+      "Weep holes blocked — weeps plugged with sealant, debris, or gasket",
+      "Weep holes missing — weeps not punched or present",
+      "Weep baffle missing or damaged — baffle absent from weep location"
+    ],
+    "Leakage symptom": [
+      "Water leak reported — customer reports water intrusion (needs root cause)",
+      "Air leak/draft reported — customer reports air infiltration/draft",
+      "Water at sill — water entering at interior sill condition",
+      "Water at head — water entering at head of frame",
+      "Water at jamb — water entering at jamb condition",
+      "Water during wind-driven rain only — leaks only under dynamic conditions"
+    ]
+  },
+
+  "Thermal Performance": {
+    "Condensation": [
+      "Condensation on interior face of glass — glass surface condensation",
+      "Condensation on frame — interior — frame surface condensation",
+      "Condensation on thermal break — cold bridge through break",
+      "Excessive condensation — exceeds spec or reasonable expectation"
+    ],
+    "Thermal bridging": [
+      "Thermal break missing — break not present in frame assembly",
+      "Thermal break damaged — break material cracked or deformed",
+      "Thermal break incorrect specification — wrong material or width",
+      "Frame condensation — thermal bridge — metal-to-metal conduction path"
+    ],
+    "Solar & thermal comfort": [
+      "Excessive solar heat gain — room overheating; SHGC complaint",
+      "Incorrect glass spec — SHGC — solar heat gain coefficient wrong",
+      "Incorrect glass spec — VLT — visible light transmission wrong",
+      "Incorrect glass spec — U-value — thermal transmittance wrong",
+      "Glare complaint — excessive glare from glass orientation or coating"
+    ]
+  },
+
+  "Functional / Performance": {
+    "Operation": [
+      "Will not open — unit will not open; obstruction/binding",
+      "Will not close — unit will not close or align to latch",
+      "Hard to operate — high force required; friction/binding",
+      "Sash misaligned in frame — sash not parallel or plumb in frame",
+      "Door binding at top or bottom — door edge contacts frame"
+    ],
+    "Hardware function": [
+      "Lock/handle failure — hardware broken, missing function, or incorrect assembly",
+      "Hinge failure — hinge bent, broken, or pulled from frame",
+      "Door closer not functioning — speed/latching incorrect"
+    ],
+    "Sealing performance": [
+      "Water leakage — water intrusion under normal conditions",
+      "Air leakage — draft/air infiltration beyond expectations",
+      "Exceeds air infiltration spec — tested or measured air leakage over limit"
+    ],
+    "Noise & vibration": [
+      "Rattle/noise — rattle/noise during operation or wind load",
+      "Whistling or wind noise — acoustic issue at perimeter or sash",
+      "Glass rattle in frame — glass not fully secured in pocket"
+    ],
+    "Aesthetics & performance": [
+      "Visible defects at install — defect noticed at installation/field even if cosmetic",
+      "Unit does not meet egress requirements — clear opening insufficient",
+      "Unit does not meet fire rating — rated assembly compromised"
+    ]
+  },
+
+  "Packaging / Shipping": {
+    "Packaging missing": [
+      "Missing hardware pack in carton — hardware pack absent from packaging",
+      "Missing screen in packaging — screen not included in shipment",
+      "Missing replacement part — ordered part not in shipment"
+    ],
+    "Packaging condition": [
+      "Crushed/damaged carton — packaging compromised; potential transit damage",
+      "Insufficient protection — inadequate padding/blocks leading to damage",
+      "Protective film missing or removed — surface exposed to damage"
+    ],
+    "Shipping damage": [
+      "Transit damage — frame — frame damaged during shipping/handling",
+      "Transit damage — glass — glass damage during shipping/handling",
+      "Transit damage — finish — finish damaged during transit",
+      "Water damage in transit — moisture ingress during shipping"
+    ],
+    "Labeling": [
+      "Incorrect label on unit — wrong label (part/customer/job) applied",
+      "Missing label/traceability — label missing; traceability compromised",
+      "Unit labeled wrong orientation — install direction label incorrect"
+    ],
+    "Kitting": [
+      "Mixed parts/incorrect kit contents — kit contains wrong/mixed components",
+      "Short shipped — units missing — fewer units received than ordered",
+      "Over shipped — too many units — more units received than ordered"
+    ],
+    "Documentation in pack": [
+      "Missing paperwork — instructions/packing list missing",
+      "Missing drawings/specs — required drawings/specs not provided with shipment",
+      "Incorrect paperwork — paperwork errors (dimensions, part number, revision)"
+    ]
+  },
+
+  "Documentation / Order Accuracy": {
+    "Order entry & configuration": [
+      "Wrong configuration built — options/configuration does not match order",
+      "Wrong handing in order — order handing misinterpreted or entered wrong",
+      "Wrong color/finish specified — finish on unit does not match PO/order",
+      "Wrong glass specified — glass type does not match order",
+      "Wrong operation type — fixed vs operable or swing direction incorrect",
+      "Wrong profile series — incorrect product line built"
+    ],
+    "Documentation": [
+      "Missing drawings/specs — required drawings/specs not provided",
+      "Incorrect paperwork — paperwork errors (dimensions, part number, revision)",
+      "Wrong revision level — outdated revision used in production"
+    ],
+    "Customer communication": [
+      "Change not captured — customer change request not implemented",
+      "Lead time/delivery miscommunication — delivery date commitment issue",
+      "Specification misunderstood — customer intent not correctly interpreted"
+    ]
+  },
+
+  "Structural / Safety": {
+    "Structural failure": [
+      "Frame deflection — exceeds L/175 or spec limit",
+      "Frame failure under wind load — structural failure in service",
+      "Anchor failure — anchor pulled out or yielded",
+      "Glass fallout — glass separated from frame in service",
+      "Mullion buckling — compression member failure"
+    ],
+    "Safety glazing": [
+      "Non-safety glass in required location — annealed where tempered/laminated required",
+      "Safety glass not tempered to spec — temper level insufficient",
+      "Laminate not meeting impact spec — interlayer or glass spec deficient",
+      "Missing CPSC/ANSI safety label — required marking absent"
+    ],
+    "Code compliance": [
+      "Unit does not meet egress requirements — clear opening size deficient",
+      "Unit does not meet fire rating — fire assembly requirement not met",
+      "Unit does not meet forced entry resistance — security spec not met",
+      "Incorrect impact rating for hurricane zone — impact spec wrong for location"
+    ]
   }
+
 };
 
 const TAX_KEY = 'gap_taxonomy';
+const TAX_VERSION = 'v3'; // bump this whenever DEFAULT_TAXONOMY changes
+const TAX_VER_KEY = 'gap_taxonomy_version';
 
 function getTaxonomy() {
   try {
@@ -410,8 +713,11 @@ function saveTaxonomy(tax) {
   try { localStorage.setItem(TAX_KEY, JSON.stringify(tax)); } catch(e) {}
 }
 
-// Initialize if not set
-if (!localStorage.getItem(TAX_KEY)) saveTaxonomy(DEFAULT_TAXONOMY);
+// If taxonomy version doesn't match, reload defaults (preserves any custom additions won't be wiped on future updates unless version bumped)
+if (localStorage.getItem(TAX_VER_KEY) !== TAX_VERSION) {
+  saveTaxonomy(DEFAULT_TAXONOMY);
+  try { localStorage.setItem(TAX_VER_KEY, TAX_VERSION); } catch(e) {}
+}
 
 // ── Case ID ──────────────────────────────────────────────────────────
 function genCaseID() {
@@ -434,118 +740,122 @@ function setPriority(btn) {
 
 // ── Speech Recognition ────────────────────────────────────────────────
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let activeRec=null, activeBtn=null, shouldRestart=false;
-if (!SR) document.getElementById('no-speech-banner').style.display='block';
-
-// Detect Android / mobile for auto-restart mode
-const IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+let activeBtn = null;
+if (!SR) document.getElementById('no-speech-banner').style.display = 'block';
 
 function showToast(t) { document.getElementById('toast-label').textContent=t; document.getElementById('speech-toast').classList.add('show'); }
 function hideToast() { document.getElementById('speech-toast').classList.remove('show'); }
-function stopActive() {
-  shouldRestart=false;
-  if (activeRec) { try{activeRec.stop();}catch(e){} activeRec=null; }
-  if (activeBtn) { activeBtn.classList.remove('recording'); activeBtn=null; }
-  hideToast();
-}
-function capitalize(s) { return s.charAt(0).toUpperCase()+s.slice(1); }
+function stopActive() { if(activeBtn){activeBtn.classList.remove('recording');activeBtn=null;} hideToast(); }
+function capitalize(s) { return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
 
-// Core: build a recognition session that auto-restarts on mobile
-function makeRec(onResult, onDone) {
-  const rec = new SR();
-  // Mobile Chrome doesn't support continuous — use single-shot + auto restart
-  rec.continuous = IS_MOBILE ? false : true;
-  rec.interimResults = true;
+// Single-shot dictation — tap to speak one phrase, result appended, tap again for more
+function dictate(btn, getTarget, setTarget, isTextarea) {
+  if (!SR) { alert('Speech recognition not supported in this browser. Please use Chrome.'); return; }
+  if (activeBtn === btn) { stopActive(); return; }
+  stopActive();
+  activeBtn = btn;
+  btn.classList.add('recording');
+  showToast('Listening… speak now');
+
+  var rec = new SR();
+  rec.continuous = false;
+  rec.interimResults = false;
   rec.lang = 'en-US';
-  rec.onresult = onResult;
-  rec.onerror = e => { if(e.error==='aborted') return; showToast('⚠ Mic: '+e.error); stopActive(); };
-  rec.onend = () => {
-    if (shouldRestart && activeBtn) {
-      // Auto-restart for mobile continuous simulation
-      try { const r2=makeRec(onResult,onDone); activeRec=r2; r2.start(); }
-      catch(e) { stopActive(); }
+  rec.maxAlternatives = 1;
+
+  rec.onresult = function(e) {
+    var transcript = e.results[0][0].transcript.trim();
+    if (!transcript) return;
+    var current = getTarget();
+    var joined;
+    if (isTextarea) {
+      if (current && !/[.!?,]$/.test(current.trimEnd())) {
+        joined = current.trimEnd() + '. ' + capitalize(transcript);
+      } else if (current) {
+        joined = current + ' ' + capitalize(transcript);
+      } else {
+        joined = capitalize(transcript);
+      }
     } else {
-      onDone && onDone();
+      joined = current ? current + ' ' + capitalize(transcript) : capitalize(transcript);
     }
+    setTarget(joined);
+    showToast('Got it — tap 🎤 again to add more');
+    setTimeout(hideToast, 2000);
+    btn.classList.remove('recording');
+    activeBtn = null;
   };
-  return rec;
+
+  rec.onerror = function(e) {
+    if (e.error === 'no-speech') {
+      showToast('No speech detected — try again');
+    } else if (e.error === 'not-allowed') {
+      showToast('Mic blocked — check browser permissions');
+    } else {
+      showToast('Error: ' + e.error);
+    }
+    setTimeout(hideToast, 3000);
+    stopActive();
+  };
+
+  rec.onend = function() {
+    if (activeBtn === btn) stopActive();
+  };
+
+  try {
+    rec.start();
+  } catch(err) {
+    showToast('Could not start mic: ' + err.message);
+    stopActive();
+  }
 }
 
 function startMic(btn) {
-  if (!SR) return;
-  if (activeBtn===btn) { stopActive(); return; }
-  stopActive();
-  const input = btn.closest('.mic-input-row').querySelector('input');
-  const interimEl = document.getElementById('interim-'+input.name);
-  activeBtn=btn; btn.classList.add('recording'); shouldRestart=true;
-  showToast(IS_MOBILE ? 'Listening… tap 🎤 to stop' : 'Listening — click 🎤 again to stop');
-  let final=input.value;
-
-  function onResult(e) {
-    let tmp='';
-    for(let i=e.resultIndex;i<e.results.length;i++){
-      const t=e.results[i][0].transcript;
-      if(e.results[i].isFinal){ final+=(final?' ':'')+capitalize(t.trim()); if(interimEl)interimEl.textContent=''; }
-      else tmp=t;
-    }
-    input.value=final;
-    if(interimEl) interimEl.textContent=tmp?`"${tmp}"`:''  ;
-  }
-  function onDone() { if(interimEl) interimEl.textContent=''; }
-
-  const rec=makeRec(onResult,onDone); activeRec=rec; rec.start();
+  var input = btn.closest('.mic-input-row').querySelector('input');
+  dictate(btn, function(){ return input.value; }, function(v){ input.value=v; }, false);
 }
 
 function startMicTa(btn) {
-  if (!SR) return;
-  if (activeBtn===btn) { stopActive(); return; }
-  stopActive();
-  const ta = btn.closest('.mic-ta-wrap').querySelector('textarea');
-  const interimEl = document.getElementById('interim-'+ta.name);
-  activeBtn=btn; btn.classList.add('recording'); shouldRestart=true;
-  showToast(IS_MOBILE ? 'Listening… tap 🎤 to stop' : 'Listening — click 🎤 again to stop');
-  let final=ta.value;
-
-  function onResult(e) {
-    let tmp='';
-    for(let i=e.resultIndex;i<e.results.length;i++){
-      const t=e.results[i][0].transcript;
-      if(e.results[i].isFinal){
-        const tr=t.trim();
-        if(final && !/[.!?,]$/.test(final.trimEnd())) final=final.trimEnd()+'. ';
-        else if(final && !final.endsWith(' ')) final+=' ';
-        final+=capitalize(tr); if(interimEl)interimEl.textContent='';
-      } else tmp=t;
-    }
-    ta.value=final; if(interimEl)interimEl.textContent=tmp?`"${tmp}"`:'' ; ta.scrollTop=ta.scrollHeight;
-  }
-  function onDone() { if(interimEl) interimEl.textContent=''; }
-
-  const rec=makeRec(onResult,onDone); activeRec=rec; rec.start();
+  var ta = btn.closest('.mic-ta-wrap').querySelector('textarea');
+  dictate(btn, function(){ return ta.value; }, function(v){ ta.value=v; ta.scrollTop=ta.scrollHeight; }, true);
 }
 
 function startMicSelect(btn, sel, msgId) {
   if (!SR) return;
-  if (activeBtn===btn) { stopActive(); return; }
+  if (activeBtn === btn) { stopActive(); return; }
   stopActive();
-  const msgEl = document.getElementById(msgId);
-  const options = Array.from(sel.options).map(o=>o.value).filter(v=>v);
-  activeBtn=btn; btn.classList.add('recording'); shouldRestart=false;
+  activeBtn = btn;
+  btn.classList.add('recording');
   showToast('Say a taxonomy option…');
+  var msgEl = document.getElementById(msgId);
+  var options = Array.from(sel.options).map(function(o){return o.value;}).filter(function(v){return v;});
 
-  const rec = new SR(); rec.continuous=false; rec.interimResults=false; rec.lang='en-US';
-  rec.onresult=e=>{
-    const spoken=e.results[0][0].transcript.trim().toLowerCase();
-    let best=null,bestScore=-1;
-    for(const o of options){ const s=fuzzyScore(spoken,o.toLowerCase()); if(s>bestScore){bestScore=s;best=o;} }
-    if(best&&bestScore>0){ sel.value=best; sel.dispatchEvent(new Event('change'));
-      if(msgEl){msgEl.textContent='✔ Matched: "'+best+'"';msgEl.className='voice-match-msg ok';}
-    } else if(msgEl){msgEl.textContent='No match for "'+spoken+'" — try again or select manually';msgEl.className='voice-match-msg err';}
+  var rec = new SR();
+  rec.continuous = false;
+  rec.interimResults = false;
+  rec.lang = 'en-US';
+
+  rec.onresult = function(e) {
+    var spoken = e.results[0][0].transcript.trim().toLowerCase();
+    var best = null, bestScore = -1;
+    for (var i=0; i<options.length; i++) {
+      var s = fuzzyScore(spoken, options[i].toLowerCase());
+      if (s > bestScore) { bestScore=s; best=options[i]; }
+    }
+    if (best && bestScore > 0) {
+      sel.value = best; sel.dispatchEvent(new Event('change'));
+      if (msgEl) { msgEl.textContent='✔ Matched: "'+best+'"'; msgEl.className='voice-match-msg ok'; }
+    } else {
+      if (msgEl) { msgEl.textContent='No match for "'+spoken+'" — select manually'; msgEl.className='voice-match-msg err'; }
+    }
     stopActive();
   };
-  rec.onerror=e=>{ if(e.error!=='aborted'&&msgEl){msgEl.textContent='⚠ '+e.error;msgEl.className='voice-match-msg err';} stopActive(); };
-  rec.onend=()=>{ if(activeBtn===btn) stopActive(); };
-  activeRec=rec; rec.start();
+  rec.onerror = function(e) {
+    if (msgEl) { msgEl.textContent='⚠ '+e.error; msgEl.className='voice-match-msg err'; }
+    stopActive();
+  };
+  rec.onend = function() { if(activeBtn===btn) stopActive(); };
+  try { rec.start(); } catch(err) { stopActive(); }
 }
 
 function fuzzyScore(a,b){
