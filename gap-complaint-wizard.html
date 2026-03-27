@@ -827,8 +827,14 @@ var STEP_REQUIRED_FIELDS = {
   6: []
 };
 
+function fieldHasValue(el){
+  if(!el) return false;
+  if(el.disabled) return true;
+  var val = (el.value || '').trim();
+  return val.length > 0;
+}
+
 function getStepRequiredFields(step){
-  var panel = document.getElementById('step-'+step);
   if(!panel) return [];
   // Use explicit list if defined, otherwise fall back to [required] scan (skipping disabled)
   var names = STEP_REQUIRED_FIELDS[step];
@@ -846,8 +852,7 @@ function validateStep(step){
   var valid = true;
 
   fields.forEach(function(el){
-    var val = (el.value || '').trim();
-    if(!val){
+    if(!fieldHasValue(el)){
       el.style.borderColor='var(--rust)';
       valid=false;
     } else {
@@ -869,9 +874,9 @@ function validateStep(step){
       var l3=document.querySelector('[name="issue_'+i+'_l3"]');
       var desc=document.querySelector('[name="issue_'+i+'_desc"]');
       [l1,l2,l3,desc].forEach(function(el){
-        if(el && !el.disabled && !(el.value||'').trim()){
+        if(el && !el.disabled && !fieldHasValue(el)){
           el.style.borderColor='var(--rust)'; valid=false;
-        } else if(el){ el.style.borderColor=''; }
+        } else if(el && !el.disabled){ el.style.borderColor=''; }
       });
     }
   }
@@ -905,8 +910,30 @@ function buildWizardNav(){
 
     tab.innerHTML='<div class="wz-num">'+numContent+'</div><span class="wz-label">'+s.label+'</span>';
     (function(step){tab.addEventListener('click',function(){
-      // Validate current step before leaving via tab click
-      validateStep(currentStep);
+      // Validate current step before allowing navigation
+      var currentValid = validateStep(currentStep);
+      buildWizardNav();
+      // Block forward navigation if current step is invalid
+      if(!currentValid && step > currentStep){
+        // Show error on current step
+        var panel = document.getElementById('step-'+currentStep);
+        var msg = document.getElementById('step-error-'+currentStep);
+        if(!msg){
+          msg=document.createElement('div');
+          msg.id='step-error-'+currentStep;
+          msg.style.cssText='background:rgba(181,76,47,.08);border:1px solid var(--rust);color:var(--rust);border-radius:7px;padding:12px 16px;font-size:13px;margin-top:16px;';
+          panel.appendChild(msg);
+        }
+        msg.innerHTML='&#9888; &nbsp;Please complete all required fields on this step before moving forward.';
+        msg.style.display='block';
+        // Scroll to first bad field
+        var fields = getStepRequiredFields(currentStep);
+        for(var fi=0;fi<fields.length;fi++){
+          if(!(fields[fi].value||'').trim()){fields[fi].scrollIntoView({behavior:'smooth',block:'center'});break;}
+        }
+        return; // block navigation
+      }
+      // Allow: going back, or going to already-completed steps, or current step is valid
       goToStep(step);
     });})(stepNum);
     nav.appendChild(tab);
