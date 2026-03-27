@@ -817,208 +817,135 @@ var currentStep=1;
 // Track validation status per step: null=unvisited, true=valid, false=invalid
 var stepStatus = {1:null,2:null,3:null,4:null,5:null,6:null};
 
-// Required fields per step — explicit field names so disabled/hidden fields don't confuse things
-var STEP_REQUIRED_FIELDS = {
-  1: ['agent_name','call_datetime','customer_name'],
-  2: ['project_name','product_type'],
-  3: [],   // issue cards validated separately below
-  4: ['ca_action_type','ca_responsible_party'],
-  5: [],
-  6: []
-};
-
 function fieldHasValue(el){
   if(!el) return false;
   if(el.disabled) return true;
-  var val = (el.value || '').trim();
-  return val.length > 0;
-}
-
-function getStepRequiredFields(step){
-  if(!panel) return [];
-  // Use explicit list if defined, otherwise fall back to [required] scan (skipping disabled)
-  var names = STEP_REQUIRED_FIELDS[step];
-  if(names && names.length>0){
-    return names.map(function(n){
-      return panel.querySelector('[name="'+n+'"]');
-    }).filter(function(el){return el && !el.disabled;});
-  }
-  // Fallback: scan [required] but skip disabled
-  return Array.from(panel.querySelectorAll('[required]')).filter(function(el){return !el.disabled;});
+  return (el.value || '').trim().length > 0;
 }
 
 function validateStep(step){
-  var fields = getStepRequiredFields(step);
   var valid = true;
-
-  fields.forEach(function(el){
-    if(!fieldHasValue(el)){
-      el.style.borderColor='var(--rust)';
-      valid=false;
-    } else {
-      el.style.borderColor='';
-    }
-  });
-
-  // Step 1: also require priority
-  if(step===1 && !document.getElementById('priority-val').value){
-    valid=false;
+  var panel = document.getElementById('step-'+step);
+  if(!panel){ stepStatus[step]=true; return true; }
+  if(step===1){
+    var f1=panel.querySelector('[name="agent_name"]');
+    var f2=panel.querySelector('[name="call_datetime"]');
+    var f3=panel.querySelector('[name="customer_name"]');
+    var pv=document.getElementById('priority-val');
+    if(!fieldHasValue(f1)){if(f1)f1.style.borderColor='var(--rust)';valid=false;}else if(f1)f1.style.borderColor='';
+    if(!fieldHasValue(f2)){if(f2)f2.style.borderColor='var(--rust)';valid=false;}else if(f2)f2.style.borderColor='';
+    if(!fieldHasValue(f3)){if(f3)f3.style.borderColor='var(--rust)';valid=false;}else if(f3)f3.style.borderColor='';
+    if(!pv||!pv.value) valid=false;
   }
-
-  // Step 3: require at least L1/L2/L3 on every issue card
+  if(step===2){
+    var g1=panel.querySelector('[name="project_name"]');
+    var g2=panel.querySelector('[name="product_type"]');
+    if(!fieldHasValue(g1)){if(g1)g1.style.borderColor='var(--rust)';valid=false;}else if(g1)g1.style.borderColor='';
+    if(!fieldHasValue(g2)){if(g2)g2.style.borderColor='var(--rust)';valid=false;}else if(g2)g2.style.borderColor='';
+  }
   if(step===3){
-    var count=parseInt(document.getElementById('issue-count').value)||1;
-    for(var i=1;i<=count;i++){
-      var l1=document.querySelector('[name="issue_'+i+'_l1"]');
-      var l2=document.querySelector('[name="issue_'+i+'_l2"]');
-      var l3=document.querySelector('[name="issue_'+i+'_l3"]');
-      var desc=document.querySelector('[name="issue_'+i+'_desc"]');
-      [l1,l2,l3,desc].forEach(function(el){
-        if(el && !el.disabled && !fieldHasValue(el)){
-          el.style.borderColor='var(--rust)'; valid=false;
-        } else if(el && !el.disabled){ el.style.borderColor=''; }
-      });
+    var cnt=parseInt(document.getElementById('issue-count').value)||1;
+    for(var ix=1;ix<=cnt;ix++){
+      var il1=document.querySelector('[name="issue_'+ix+'_l1"]');
+      var il2=document.querySelector('[name="issue_'+ix+'_l2"]');
+      var il3=document.querySelector('[name="issue_'+ix+'_l3"]');
+      var idc=document.querySelector('[name="issue_'+ix+'_desc"]');
+      if(il1&&!il1.disabled&&!fieldHasValue(il1)){il1.style.borderColor='var(--rust)';valid=false;}else if(il1)il1.style.borderColor='';
+      if(il2&&!il2.disabled&&!fieldHasValue(il2)){il2.style.borderColor='var(--rust)';valid=false;}else if(il2)il2.style.borderColor='';
+      if(il3&&!il3.disabled&&!fieldHasValue(il3)){il3.style.borderColor='var(--rust)';valid=false;}else if(il3)il3.style.borderColor='';
+      if(idc&&!fieldHasValue(idc)){idc.style.borderColor='var(--rust)';valid=false;}else if(idc)idc.style.borderColor='';
     }
   }
-
-  stepStatus[step] = valid;
+  if(step===4){
+    var h1=panel.querySelector('[name="ca_action_type"]');
+    var h2=panel.querySelector('[name="ca_responsible_party"]');
+    if(!fieldHasValue(h1)){if(h1)h1.style.borderColor='var(--rust)';valid=false;}else if(h1)h1.style.borderColor='';
+    if(!fieldHasValue(h2)){if(h2)h2.style.borderColor='var(--rust)';valid=false;}else if(h2)h2.style.borderColor='';
+  }
+  stepStatus[step]=valid;
   return valid;
+}
+
+function getStepRequiredFields(step){
+  var panel=document.getElementById('step-'+step);
+  if(!panel) return [];
+  return Array.from(panel.querySelectorAll('[required]')).filter(function(f){return !f.disabled;});
 }
 
 function buildWizardNav(){
   var nav=document.getElementById('wizard-nav');
   nav.innerHTML='';
   STEPS.forEach(function(s,i){
-    var stepNum = i+1;
+    var sn=i+1;
     var tab=document.createElement('div');
     var cls='wz-tab';
-    if(stepNum===currentStep) cls+=' active';
-    else if(stepStatus[stepNum]===true) cls+=' done';
-    else if(stepStatus[stepNum]===false) cls+=' invalid';
+    if(sn===currentStep) cls+=' active';
+    else if(stepStatus[sn]===true) cls+=' done';
+    else if(stepStatus[sn]===false) cls+=' invalid';
     tab.className=cls;
-
-    var numContent;
-    if(stepNum===currentStep){
-      numContent=String(stepNum);
-    } else if(stepStatus[stepNum]===true){
-      numContent='&#10003;'; // green check
-    } else if(stepStatus[stepNum]===false){
-      numContent='&#10007;'; // red X
-    } else {
-      numContent=String(stepNum);
-    }
-
-    tab.innerHTML='<div class="wz-num">'+numContent+'</div><span class="wz-label">'+s.label+'</span>';
-    (function(step){tab.addEventListener('click',function(){
-      // Validate current step before allowing navigation
-      var currentValid = validateStep(currentStep);
-      buildWizardNav();
-      // Block forward navigation if current step is invalid
-      if(!currentValid && step > currentStep){
-        // Show error on current step
-        var panel = document.getElementById('step-'+currentStep);
-        var msg = document.getElementById('step-error-'+currentStep);
-        if(!msg){
-          msg=document.createElement('div');
-          msg.id='step-error-'+currentStep;
-          msg.style.cssText='background:rgba(181,76,47,.08);border:1px solid var(--rust);color:var(--rust);border-radius:7px;padding:12px 16px;font-size:13px;margin-top:16px;';
-          panel.appendChild(msg);
+    var icon=(sn===currentStep)?String(sn):(stepStatus[sn]===true?'&#10003;':(stepStatus[sn]===false?'&#10007;':String(sn)));
+    tab.innerHTML='<div class="wz-num">'+icon+'</div><span class="wz-label">'+s.label+'</span>';
+    (function(n){
+      tab.addEventListener('click',function(){
+        if(n<currentStep){goToStep(n);return;}
+        if(n>currentStep){
+          var ok=validateStep(currentStep);
+          buildWizardNav();
+          if(!ok){showStepError(currentStep);return;}
         }
-        msg.innerHTML='&#9888; &nbsp;Please complete all required fields on this step before moving forward.';
-        msg.style.display='block';
-        // Scroll to first bad field
-        var fields = getStepRequiredFields(currentStep);
-        for(var fi=0;fi<fields.length;fi++){
-          if(!(fields[fi].value||'').trim()){fields[fi].scrollIntoView({behavior:'smooth',block:'center'});break;}
-        }
-        return; // block navigation
-      }
-      // Allow: going back, or going to already-completed steps, or current step is valid
-      goToStep(step);
-    });})(stepNum);
+        goToStep(n);
+      });
+    })(sn);
     nav.appendChild(tab);
   });
 }
 
+function showStepError(step){
+  var panel=document.getElementById('step-'+step);
+  if(!panel) return;
+  var msg=document.getElementById('step-error-'+step);
+  if(!msg){
+    msg=document.createElement('div');
+    msg.id='step-error-'+step;
+    msg.style.cssText='background:rgba(181,76,47,.08);border:1px solid var(--rust);color:var(--rust);border-radius:7px;padding:12px 16px;font-size:13px;margin-top:16px;';
+    panel.appendChild(msg);
+  }
+  var parts=[];
+  if(step===1&&!document.getElementById('priority-val').value) parts.push('Priority must be selected in the bar above');
+  var empties=getStepRequiredFields(step).filter(function(f){return !fieldHasValue(f);});
+  if(empties.length>0) parts.push(empties.length+' required field'+(empties.length!==1?'s':'')+' need to be filled in');
+  if(parts.length===0) parts.push('Please complete all required fields');
+  msg.innerHTML='&#9888; &nbsp;'+parts.join(' — ')+'.';
+  msg.style.display='block';
+  if(empties.length>0) empties[0].scrollIntoView({behavior:'smooth',block:'center'});
+  else window.scrollTo({top:0,behavior:'smooth'});
+}
+
 function goToStep(n){
-  document.getElementById('step-'+currentStep).classList.remove('active');
-  currentStep=n;
-  document.getElementById('step-'+currentStep).classList.add('active');
-  document.getElementById('btn-prev').disabled=(currentStep===1);
-  document.getElementById('btn-next').textContent=(currentStep===STEPS.length)?'Save Record':'Next \u2192';
-  document.getElementById('step-indicator').textContent='Step '+currentStep+' of '+STEPS.length;
-  buildWizardNav();
-  window.scrollTo({top:0,behavior:'smooth'});
+  try{
+    document.getElementById('step-'+currentStep).classList.remove('active');
+    currentStep=n;
+    document.getElementById('step-'+currentStep).classList.add('active');
+    document.getElementById('btn-prev').disabled=(currentStep===1);
+    document.getElementById('btn-next').textContent=(currentStep===STEPS.length)?'Save Record':'Next →';
+    document.getElementById('step-indicator').textContent='Step '+currentStep+' of '+STEPS.length;
+    buildWizardNav();
+    window.scrollTo({top:0,behavior:'smooth'});
+  }catch(err){alert('Navigation error: '+err.message);}
 }
 
 function wizardNext(){
-  if(currentStep===STEPS.length){ submitForm(); return; }
-
-  var valid = validateStep(currentStep);
+  if(currentStep===STEPS.length){submitForm();return;}
+  var valid=validateStep(currentStep);
   buildWizardNav();
-
-  if(!valid){
-    var panel = document.getElementById('step-'+currentStep);
-
-    // Highlight priority buttons if missing on step 1
-    var priorityMissing = (currentStep===1 && !document.getElementById('priority-val').value);
-    var priorityWrap = document.querySelector('.priority-strip');
-    if(priorityMissing && priorityWrap){
-      priorityWrap.style.outline='3px solid var(--rust)';
-      setTimeout(function(){priorityWrap.style.outline='';},3000);
-    }
-
-    // Build error message
-    var allRequired = Array.from(panel.querySelectorAll('[required]')).filter(function(f){return !f.disabled;});
-    var emptyFields = allRequired.filter(function(f){return !(f.value||'').trim();});
-    var missingCount = emptyFields.length + (priorityMissing?1:0);
-
-    // Show error message
-    var msg = document.getElementById('step-error-'+currentStep);
-    if(!msg){
-      msg=document.createElement('div');
-      msg.id='step-error-'+currentStep;
-      msg.style.cssText='background:rgba(181,76,47,.08);border:1px solid var(--rust);color:var(--rust);border-radius:7px;padding:12px 16px;font-size:13px;margin-top:16px;';
-      panel.appendChild(msg);
-    }
-    var parts = [];
-    if(emptyFields.length>0) parts.push(emptyFields.length+' required field'+(emptyFields.length!==1?'s':'')+' below need'+(emptyFields.length===1?'s':'')+' to be filled in');
-    if(priorityMissing) parts.push('Priority must be selected in the header bar above');
-    msg.innerHTML='&#9888; &nbsp;'+parts.join(' &nbsp;+&nbsp; ')+'.';
-    msg.style.display='block';
-
-    // Scroll to first empty required field, or to top of step if only priority missing
-    if(emptyFields.length>0){
-      emptyFields[0].scrollIntoView({behavior:'smooth',block:'center'});
-    } else {
-      window.scrollTo({top:0,behavior:'smooth'});
-    }
-    return;
-  }
-
-  // Valid — clear error and advance
-  var errMsg = document.getElementById('step-error-'+currentStep);
-  if(errMsg) errMsg.style.display='none';
-
+  if(!valid){showStepError(currentStep);return;}
+  var em=document.getElementById('step-error-'+currentStep);
+  if(em) em.style.display='none';
   if(currentStep===1) showCaseToast();
-
   goToStep(currentStep+1);
 }
 
-function showCaseToast(){
-  var toast = document.getElementById('case-toast');
-  if(!toast){
-    toast=document.createElement('div');
-    toast.id='case-toast';
-    toast.style.cssText='position:fixed;top:24px;left:50%;transform:translateX(-50%);background:var(--espresso);color:var(--warm-white);border-radius:8px;padding:14px 28px;font-size:13px;font-weight:500;box-shadow:0 8px 28px rgba(0,0,0,.28);z-index:9999;opacity:0;transition:opacity .3s;text-align:center;pointer-events:none;';
-    document.body.appendChild(toast);
-  }
-  toast.innerHTML='&#128203; Complaint <span style="font-family:\'Courier Prime\',monospace;color:var(--sand);font-size:15px;font-weight:700;">'+CASE_ID+'</span> has been assigned';
-  toast.style.opacity='1';
-  setTimeout(function(){toast.style.opacity='0';},3500);
-}
-
-function wizardPrev(){ if(currentStep>1) goToStep(currentStep-1); }
+function wizardPrev(){if(currentStep>1) goToStep(currentStep-1);}
 
 buildWizardNav();
 
