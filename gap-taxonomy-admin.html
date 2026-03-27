@@ -119,6 +119,10 @@
 
     .footer{text-align:center;margin-top:40px;font-size:10px;color:var(--text-lt);letter-spacing:.1em;opacity:.5}
 
+    .pg-tab{background:none;border:none;border-bottom:3px solid transparent;padding:13px 20px;font-family:'Jost',sans-serif;font-size:12px;font-weight:500;color:var(--text-lt);cursor:pointer;letter-spacing:.05em;transition:all .15s}
+    .pg-tab:hover{color:var(--bark);background:rgba(139,111,71,.04)}
+    .pg-tab.active{color:var(--bronze-dk);border-bottom-color:var(--bronze);font-weight:600}
+
     @media(max-width:700px){
       .main{grid-template-columns:1fr}
       .header,.toolbar{padding:0 18px}
@@ -144,10 +148,10 @@
   <div class="header-inner">
     <div class="header-left">
       <div class="brand-eyebrow">Graham Architectural Products</div>
-      <div class="brand-name">Quality <span>Taxonomy</span> Manager</div>
+      <div class="brand-name">Quality <span>Lists</span> Manager</div>
     </div>
     <div class="header-right">
-      <a class="back-link" href="gap-voice-complaint-form.html">← Back to Complaint Form</a>
+      <a class="back-link" href="gap-complaint-wizard.html">← Back to Complaint Form</a>
       <div class="tax-count" id="tax-count-display"></div>
     </div>
   </div>
@@ -169,6 +173,17 @@
   </div>
 </div>
 
+<!-- ── PAGE TABS ── -->
+<div style="background:var(--warm-white);border-bottom:1px solid var(--parchment);padding:0 36px;">
+  <div style="max-width:1100px;margin:0 auto;display:flex;gap:0;">
+    <button class="pg-tab active" id="tab-taxonomy" onclick="switchTab('taxonomy')">Defect Taxonomy</button>
+    <button class="pg-tab" id="tab-products" onclick="switchTab('products')">Product Catalog</button>
+    <button class="pg-tab" id="tab-lists" onclick="switchTab('lists')">Corrective Action Lists</button>
+  </div>
+</div>
+
+<!-- ── TAXONOMY PANEL ── -->
+<div id="panel-taxonomy">
 <!-- ── MAIN ── -->
 <div class="main">
   <!-- L1 Panel -->
@@ -197,6 +212,86 @@
       <div class="empty-state-text">Select a defect family</div>
       <div class="empty-state-sub">Click an L1 family on the left to view and manage its types and details.</div>
     </div>
+  </div>
+</div>
+
+</div><!-- end panel-taxonomy -->
+
+<!-- ── PRODUCTS PANEL ── -->
+<div id="panel-products" style="display:none;max-width:1100px;margin:0 auto;padding:28px 36px 0;">
+  <div style="display:grid;grid-template-columns:220px 1fr;gap:20px;">
+    <!-- Product Type List -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span style="background:var(--amber);">Type</span>Product Types</div>
+        <button class="btn-add-sm" onclick="startAddProductType()">+ Add</button>
+      </div>
+      <div class="panel-body" id="product-type-list"></div>
+      <div id="add-product-type-form" style="display:none;padding:12px 18px;border-top:1px solid var(--parchment);">
+        <div style="font-size:10px;font-weight:600;letter-spacing:.15em;color:var(--text-mid);text-transform:uppercase;margin-bottom:8px;">New Product Type</div>
+        <div class="inline-form">
+          <input class="inline-input" id="new-product-type-input" placeholder="e.g. Casement"/>
+          <button class="inline-confirm" onclick="confirmAddProductType()">Add</button>
+          <button class="inline-cancel" onclick="document.getElementById('add-product-type-form').style.display='none'">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <!-- Model Numbers -->
+    <div id="product-models-panel">
+      <div style="background:var(--warm-white);border:1px solid var(--parchment);border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(46,31,15,.05);">
+        <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div class="panel-title" id="models-panel-title"><span style="background:var(--amber);">Models</span>Select a product type</div>
+        </div>
+        <div style="padding:16px 18px;" id="models-body">
+          <div style="font-size:13px;color:var(--text-lt);font-style:italic;">Select a product type on the left to manage its model numbers.</div>
+        </div>
+      </div>
+      <!-- Bulk paste for models -->
+      <div style="margin-top:14px;background:var(--warm-white);border:1px solid var(--parchment);border-radius:10px;padding:18px;box-shadow:0 2px 10px rgba(46,31,15,.05);">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--espresso);margin-bottom:6px;">Bulk Paste Models</div>
+        <div style="font-size:12px;color:var(--text-lt);margin-bottom:10px;">Paste a list of model numbers — one per line. They will all be added to the selected product type.</div>
+        <textarea id="bulk-models-paste" style="width:100%;height:120px;background:var(--cream);border:1px solid var(--sand);border-radius:6px;padding:10px 12px;font-family:'Courier Prime',monospace;font-size:13px;outline:none;resize:vertical;" placeholder="3000&#10;3100&#10;3400&#10;V3900&#10;..."></textarea>
+        <div style="display:flex;gap:10px;margin-top:10px;align-items:center;">
+          <button class="btn-add-sm" onclick="bulkAddModels()">Add All to Selected Type</button>
+          <span style="font-size:11px;color:var(--text-lt);font-style:italic;" id="bulk-models-status"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CA LISTS PANEL ── -->
+<div id="panel-lists" style="display:none;max-width:1100px;margin:0 auto;padding:28px 36px 0;">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+    <!-- Action Types -->
+    <div style="background:var(--warm-white);border:1px solid var(--parchment);border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(46,31,15,.05);">
+      <div class="panel-head">
+        <div class="panel-title"><span>CA</span>Action Types</div>
+        <button class="btn-add-sm" onclick="startAddAction()">+ Add</button>
+      </div>
+      <div id="action-types-list" style="padding:8px 0;"></div>
+      <div style="padding:14px 18px;border-top:1px solid var(--parchment);">
+        <div style="font-size:10px;font-weight:600;letter-spacing:.15em;color:var(--text-mid);text-transform:uppercase;margin-bottom:8px;">Bulk Paste Action Types</div>
+        <textarea id="bulk-actions-paste" style="width:100%;height:90px;background:var(--cream);border:1px solid var(--sand);border-radius:6px;padding:8px 12px;font-family:'Courier Prime',monospace;font-size:12px;outline:none;resize:vertical;" placeholder="Replacement / Remake&#10;Credit / Refund&#10;..."></textarea>
+        <button class="btn-add-sm" style="margin-top:8px;" onclick="bulkAddActions()">Add All</button>
+      </div>
+    </div>
+
+    <!-- Responsible Parties -->
+    <div style="background:var(--warm-white);border:1px solid var(--parchment);border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(46,31,15,.05);">
+      <div class="panel-head">
+        <div class="panel-title"><span>CA</span>Responsible Parties</div>
+        <button class="btn-add-sm" onclick="startAddParty()">+ Add</button>
+      </div>
+      <div id="responsible-parties-list" style="padding:8px 0;"></div>
+      <div style="padding:14px 18px;border-top:1px solid var(--parchment);">
+        <div style="font-size:10px;font-weight:600;letter-spacing:.15em;color:var(--text-mid);text-transform:uppercase;margin-bottom:8px;">Bulk Paste Departments</div>
+        <textarea id="bulk-parties-paste" style="width:100%;height:90px;background:var(--cream);border:1px solid var(--sand);border-radius:6px;padding:8px 12px;font-family:'Courier Prime',monospace;font-size:12px;outline:none;resize:vertical;" placeholder="Customer Service&#10;Field Service&#10;Quality Assurance&#10;..."></textarea>
+        <button class="btn-add-sm" style="margin-top:8px;" onclick="bulkAddParties()">Add All</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -523,7 +618,32 @@ function saveTaxonomy(t){try{localStorage.setItem(TAX_KEY,JSON.stringify(t));}ca
 if(!localStorage.getItem(TAX_KEY)) saveTaxonomy(DEFAULT_TAXONOMY);
 
 let selectedL1=null;
+let selectedL2=null;
 let confirmCallback=null;
+
+function bulkAddL3(){
+  var text=document.getElementById('bulk-l3-paste');
+  var status=document.getElementById('bulk-l3-status');
+  if(!text||!status) return;
+  var txt=text.value.trim();
+  if(!selectedL1){status.textContent='Select an L1 family first.';return;}
+  if(!selectedL2){status.textContent='Click an L2 type row above to select it.';return;}
+  if(!txt){status.textContent='Paste some details first.';return;}
+  var lines=txt.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
+  var tax=getTaxonomy();
+  if(!tax[selectedL1]) tax[selectedL1]={};
+  if(!tax[selectedL1][selectedL2]) tax[selectedL1][selectedL2]=[];
+  var added=0;
+  lines.forEach(function(line){
+    if(tax[selectedL1][selectedL2].indexOf(line)<0){tax[selectedL1][selectedL2].push(line);added++;}
+  });
+  saveTaxonomy(tax);
+  text.value='';
+  status.textContent='Added '+added+' detail(s) to "'+selectedL2+'".';
+  setTimeout(function(){if(status)status.textContent='';},4000);
+  toast('Added '+added+' L3 details to "'+selectedL2+'"');
+  renderRightPanel();
+}
 
 // ── Toast ─────────────────────────────────────────────────────────────
 function toast(msg,type='success'){
@@ -632,6 +752,7 @@ function renderRightPanel(){
       `;
       row.querySelector('.l2-row-head').addEventListener('click',function(e){
         if(e.target.closest('.l2-row-actions')) return;
+        selectedL2=l2k;
         row.classList.toggle('open');
       });
       body.appendChild(row);
@@ -665,6 +786,19 @@ function renderRightPanel(){
       <button class="inline-cancel" onclick="document.getElementById('add-l2-form').style.display='none'">Cancel</button>
     </div>
   `;
+  // Bulk paste for L3
+  var bulkSection=document.createElement('div');
+  bulkSection.style.cssText='padding:14px 18px;border-top:1px solid var(--parchment);';
+  bulkSection.innerHTML=
+    '<div style="font-size:10px;font-weight:600;letter-spacing:.15em;color:var(--text-mid);text-transform:uppercase;margin-bottom:8px;">Bulk Paste L3 Details</div>'+
+    '<div style="font-size:11px;color:var(--text-lt);margin-bottom:8px;">Select an L2 type above, then paste details (one per line) to add them all at once.</div>'+
+    '<textarea id="bulk-l3-paste" style="width:100%;height:90px;background:var(--cream);border:1px solid var(--sand);border-radius:6px;padding:8px 12px;font-family:\'Courier Prime\',monospace;font-size:12px;outline:none;resize:vertical;" placeholder="Light scratch&#10;Deep scratch&#10;Surface abrasion&#10;..."></textarea>'+
+    '<div style="display:flex;gap:10px;margin-top:8px;align-items:center;">'+
+      '<button class="btn-add-sm" onclick="bulkAddL3()">Add All to Selected L2</button>'+
+      '<span style="font-size:11px;color:var(--text-lt);font-style:italic;" id="bulk-l3-status"></span>'+
+    '</div>';
+  block.appendChild(bulkSection);
+
   block.appendChild(addL2Form);
   rp.appendChild(block);
 }
@@ -808,9 +942,218 @@ function resetToDefaults(){
 function escQ(s){ return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 function escID(s){ return s.replace(/[^a-zA-Z0-9]/g,'_'); }
 
-// ── Full refresh ──────────────────────────────────────────────────────
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────────
+function switchTab(tab) {
+  ['taxonomy','products','lists'].forEach(function(t) {
+    document.getElementById('panel-'+t).style.display = t===tab ? 'block' : 'none';
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+  });
+  if(tab==='products') renderProductTypes();
+  if(tab==='lists') renderCaLists();
+}
+
+// ── PRODUCT CATALOG ───────────────────────────────────────────────────
+var PRODUCT_KEY='gap_products';
+var DEFAULT_PRODUCTS={
+  "Double Hung":["3000","3100","3400","V3900","GF4000","GF8000"],
+  "Projected":["6600","6700","6800","GF6800","6900","V6900"],
+  "Fixed":["1000","1100","1200","1300","1400","1500","V1100"],
+  "Horizontal Slider":["0200","0300","0400","0500","0600","GF0300","V0400"],
+  "Sliding Glass Door":["0800","0900","GF0900","V0900"],
+  "Terrace Door":["7000","7100","7400"],
+  "Tilt and Turn":["7500"],
+  "Curtain Wall":["CW-Standard","CW-Thermally Broken","CW-Custom"],
+  "Storefront":["SF-Standard","SF-Thermally Broken"],
+  "Entrance Door":["ED-Standard","ED-Automatic","ED-Panic Hardware"]
+};
+function getProducts(){try{var s=localStorage.getItem(PRODUCT_KEY);if(s)return JSON.parse(s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));}
+function saveProducts(p){try{localStorage.setItem(PRODUCT_KEY,JSON.stringify(p));}catch(e){} renderProductTypes();}
+if(!localStorage.getItem(PRODUCT_KEY)) saveProducts(DEFAULT_PRODUCTS);
+
+var selectedProductType=null;
+
+function renderProductTypes(){
+  var products=getProducts();
+  var list=document.getElementById('product-type-list');
+  list.innerHTML='';
+  Object.keys(products).forEach(function(t){
+    var item=document.createElement('div');
+    item.className='l1-item'+(selectedProductType===t?' active':'');
+    item.innerHTML='<div class="l1-name">'+t+'</div><div class="l1-count">'+products[t].length+' models</div>'+
+      '<div class="item-actions">'+
+        '<button class="btn-icon del" title="Delete type" onclick="deleteProductType(event,\''+escQ(t)+'\')">🗑️</button>'+
+      '</div>';
+    item.addEventListener('click',function(){selectProductType(t);});
+    list.appendChild(item);
+  });
+}
+
+function selectProductType(t){
+  selectedProductType=t;
+  renderProductTypes();
+  renderModels();
+}
+
+function renderModels(){
+  var products=getProducts();
+  var body=document.getElementById('models-body');
+  var title=document.getElementById('models-panel-title');
+  if(!selectedProductType){body.innerHTML='<div style="font-size:13px;color:var(--text-lt);font-style:italic;">Select a product type on the left.</div>';return;}
+  title.innerHTML='<span style="background:var(--amber);">Models</span>'+selectedProductType;
+  var models=products[selectedProductType]||[];
+  body.innerHTML='';
+  if(!models.length){body.innerHTML='<div style="font-size:13px;color:var(--text-lt);font-style:italic;margin-bottom:10px;">No models yet — add below or use bulk paste.</div>';}
+  // Model chips
+  var chips=document.createElement('div');chips.style.cssText='display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;';
+  models.forEach(function(m,i){
+    var chip=document.createElement('div');chip.className='file-chip';
+    chip.innerHTML='<span class="fc-name" style="min-width:60px;">'+m+'</span><button type="button" class="fc-rm" onclick="deleteModel(\''+escQ(m)+'\')">x</button>';
+    chips.appendChild(chip);
+  });
+  body.appendChild(chips);
+  // Add single model
+  var row=document.createElement('div');row.className='inline-form';
+  row.innerHTML='<input class="inline-input" id="new-model-input" placeholder="e.g. 3500" onkeydown="if(event.key===\'Enter\')confirmAddModel()"/>'+
+    '<button class="inline-confirm" onclick="confirmAddModel()">Add</button>';
+  body.appendChild(row);
+}
+
+function confirmAddModel(){
+  var val=document.getElementById('new-model-input').value.trim();
+  if(!val||!selectedProductType){toast('Please enter a model number.','error');return;}
+  var p=getProducts();
+  if(!p[selectedProductType]) p[selectedProductType]=[];
+  if(p[selectedProductType].indexOf(val)>=0){toast('Model already exists.','error');return;}
+  p[selectedProductType].push(val);
+  saveProducts(p);
+  renderModels();
+  toast('Added model "'+val+'"');
+}
+
+function deleteModel(m){
+  var p=getProducts();
+  if(p[selectedProductType]){p[selectedProductType]=p[selectedProductType].filter(function(x){return x!==m;});saveProducts(p);renderModels();toast('Deleted "'+m+'"');}
+}
+
+function bulkAddModels(){
+  var text=document.getElementById('bulk-models-paste').value.trim();
+  var status=document.getElementById('bulk-models-status');
+  if(!selectedProductType){status.textContent='Select a product type first.';return;}
+  if(!text){status.textContent='Paste some model numbers first.';return;}
+  var lines=text.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
+  var p=getProducts();
+  if(!p[selectedProductType]) p[selectedProductType]=[];
+  var added=0;
+  lines.forEach(function(line){
+    if(p[selectedProductType].indexOf(line)<0){p[selectedProductType].push(line);added++;}
+  });
+  saveProducts(p);
+  renderModels();
+  document.getElementById('bulk-models-paste').value='';
+  status.textContent='Added '+added+' model(s).';
+  setTimeout(function(){status.textContent='';},3000);
+  toast('Added '+added+' models to "'+selectedProductType+'"');
+}
+
+function startAddProductType(){
+  document.getElementById('add-product-type-form').style.display='block';
+  setTimeout(function(){document.getElementById('new-product-type-input').focus();},50);
+}
+function confirmAddProductType(){
+  var val=document.getElementById('new-product-type-input').value.trim();
+  if(!val){toast('Enter a product type name.','error');return;}
+  var p=getProducts();
+  if(p[val]){toast('That type already exists.','error');return;}
+  p[val]=[];saveProducts(p);
+  document.getElementById('add-product-type-form').style.display='none';
+  document.getElementById('new-product-type-input').value='';
+  selectProductType(val);toast('Added type "'+val+'"');
+}
+function deleteProductType(e,t){
+  e.stopPropagation();
+  showConfirm('Delete "'+t+'"?','This removes the product type and all its model numbers.',function(){
+    var p=getProducts();delete p[t];saveProducts(p);
+    if(selectedProductType===t){selectedProductType=null;renderModels();}
+    toast('Deleted "'+t+'"');
+  });
+}
+
+// ── CA LISTS ──────────────────────────────────────────────────────────
+var LISTS_KEY='gap_ca_lists';
+var DEFAULT_LISTS={
+  actions:["Replacement / Remake","Credit / Refund","Field Service Repair","Root Cause Investigation","No Action Required","Customer Satisfaction","Warranty Claim","Design Review"],
+  parties:["Customer Service","Field Service","Quality Assurance","Manufacturing","Manufacturing - York","Manufacturing - FMG","Production Engineering","Design Engineering","Shipping Dept","Credit","Carrier"]
+};
+function getCaLists(){try{var s=localStorage.getItem(LISTS_KEY);if(s)return JSON.parse(s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_LISTS));}
+function saveCaLists(l){try{localStorage.setItem(LISTS_KEY,JSON.stringify(l));}catch(e){} renderCaLists();}
+if(!localStorage.getItem(LISTS_KEY)) saveCaLists(DEFAULT_LISTS);
+
+function renderCaLists(){
+  var lists=getCaLists();
+  renderSimpleList('action-types-list', lists.actions, 'action');
+  renderSimpleList('responsible-parties-list', lists.parties, 'party');
+}
+
+function renderSimpleList(containerId, items, type){
+  var el=document.getElementById(containerId);
+  el.innerHTML='';
+  items.forEach(function(item,i){
+    var row=document.createElement('div');
+    row.className='l1-item';
+    row.style.cursor='default';
+    row.innerHTML='<div class="l1-name">'+item+'</div>'+
+      '<div class="item-actions" style="opacity:1;">'+
+        '<button class="btn-icon del" onclick="deleteListItem(\''+type+'\','+i+')">🗑️</button>'+
+      '</div>';
+    el.appendChild(row);
+  });
+}
+
+function startAddAction(){
+  var val=prompt('New action type:');
+  if(!val||!val.trim()) return;
+  var lists=getCaLists();
+  if(lists.actions.indexOf(val.trim())>=0){toast('Already exists.','error');return;}
+  lists.actions.push(val.trim());saveCaLists(lists);toast('Added "'+val.trim()+'"');
+}
+function startAddParty(){
+  var val=prompt('New responsible party / department:');
+  if(!val||!val.trim()) return;
+  var lists=getCaLists();
+  if(lists.parties.indexOf(val.trim())>=0){toast('Already exists.','error');return;}
+  lists.parties.push(val.trim());saveCaLists(lists);toast('Added "'+val.trim()+'"');
+}
+function deleteListItem(type,i){
+  var lists=getCaLists();
+  var arr=type==='action'?lists.actions:lists.parties;
+  var name=arr[i];
+  showConfirm('Delete "'+name+'"?','This item will be removed from the dropdown.',function(){
+    arr.splice(i,1);saveCaLists(lists);toast('Deleted "'+name+'"');
+  });
+}
+function bulkAddActions(){
+  var text=document.getElementById('bulk-actions-paste').value.trim();
+  if(!text) return;
+  var lines=text.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
+  var lists=getCaLists(); var added=0;
+  lines.forEach(function(l){if(lists.actions.indexOf(l)<0){lists.actions.push(l);added++;}});
+  saveCaLists(lists);
+  document.getElementById('bulk-actions-paste').value='';
+  toast('Added '+added+' action type(s)');
+}
+function bulkAddParties(){
+  var text=document.getElementById('bulk-parties-paste').value.trim();
+  if(!text) return;
+  var lines=text.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
+  var lists=getCaLists(); var added=0;
+  lines.forEach(function(l){if(lists.parties.indexOf(l)<0){lists.parties.push(l);added++;}});
+  saveCaLists(lists);
+  document.getElementById('bulk-parties-paste').value='';
+  toast('Added '+added+' department(s)');
+}
+
 function refresh(){
-  updateCount();
   renderL1List();
   renderRightPanel();
 }
