@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GAP — Taxonomy Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root{--cream:#f5f0e8;--warm-white:#faf7f2;--parchment:#ede5d4;--sand:#c9b99a;--bronze:#8b6f47;--bronze-dk:#6b5135;--espresso:#2e1f0f;--bark:#4a3520;--stone:#7a7060;--rust:#b54c2f;--sage:#6b7c6a;--amber:#d4880a;--blue-int:#1e4a7a;--blue-lt:#e8f0fa;--text:#2e1f0f;--text-mid:#6b5a45;--text-lt:#9c8a75;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--cream);color:var(--text);font-family:'Jost',sans-serif;font-size:14px;min-height:100vh;padding-bottom:60px;background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23c9b99a' fill-opacity='0.10'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+
+    /* ── HEADER ── */
+    .header{background:var(--espresso);padding:0 36px;position:relative;overflow:hidden}
+    .header::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 120% at 100% 50%,rgba(139,111,71,.2) 0%,transparent 65%);pointer-events:none}
+    .header-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:20px 0;position:relative}
+    .header-left{display:flex;flex-direction:column;gap:3px}
+    .brand-eyebrow{font-size:9px;font-weight:500;letter-spacing:.3em;color:var(--sand);text-transform:uppercase;opacity:.7}
+    .brand-name{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:var(--warm-white);letter-spacing:.02em}
+    .brand-name span{color:var(--sand)}
+    .page-title{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:600;color:var(--parchment)}
+    .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+    .back-link{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:500;letter-spacing:.15em;color:var(--sand);text-transform:uppercase;text-decoration:none;border:1px solid rgba(201,185,154,.2);border-radius:4px;padding:5px 12px;transition:background .15s}
+    .back-link:hover{background:rgba(201,185,154,.1)}
+    .tax-count{font-family:'Courier Prime',monospace;font-size:12px;color:var(--stone)}
+
+    /* ── TOOLBAR ── */
+    .toolbar{background:var(--bark);padding:0 36px}
+    .toolbar-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
+    .toolbar-label{font-size:9px;font-weight:500;letter-spacing:.25em;color:var(--sand);text-transform:uppercase;opacity:.65;margin-right:4px}
+    .btn-tool{display:flex;align-items:center;gap:6px;border:1px solid rgba(201,185,154,.25);background:rgba(255,255,255,.05);border-radius:5px;padding:7px 16px;color:var(--parchment);font-family:'Jost',sans-serif;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+    .btn-tool:hover{background:rgba(201,185,154,.12);border-color:rgba(201,185,154,.4)}
+    .btn-tool.primary{background:var(--bronze);border-color:var(--bronze)}
+    .btn-tool.primary:hover{opacity:.88}
+    .btn-tool.danger{border-color:rgba(181,76,47,.4);color:#e07060}
+    .btn-tool.danger:hover{background:rgba(181,76,47,.15)}
+    .toolbar-sep{width:1px;height:24px;background:rgba(201,185,154,.15)}
+    #import-input{display:none}
+
+    /* ── MAIN LAYOUT ── */
+    .main{max-width:1100px;margin:0 auto;padding:32px 36px 0;display:grid;grid-template-columns:260px 1fr;gap:24px}
+
+    /* ── L1 PANEL ── */
+    .panel{background:var(--warm-white);border:1px solid var(--parchment);border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(46,31,15,.05)}
+    .panel-head{background:var(--parchment);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--sand)}
+    .panel-title{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--espresso)}
+    .panel-title span{font-family:'Jost',sans-serif;font-size:10px;font-weight:500;letter-spacing:.15em;background:var(--bronze);color:var(--warm-white);padding:2px 7px;border-radius:3px;margin-right:8px;vertical-align:middle}
+    .btn-add-sm{background:var(--bronze);border:none;border-radius:5px;padding:5px 12px;color:var(--warm-white);font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:opacity .15s}
+    .btn-add-sm:hover{opacity:.85}
+    .panel-body{padding:8px 0}
+
+    /* ── L1 ITEMS ── */
+    .l1-item{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;cursor:pointer;transition:background .12s;border-left:3px solid transparent}
+    .l1-item:hover{background:rgba(139,111,71,.05)}
+    .l1-item.active{background:rgba(139,111,71,.08);border-left-color:var(--bronze)}
+    .l1-name{font-weight:500;font-size:14px;color:var(--text);flex:1;line-height:1.3}
+    .l1-count{font-size:10px;color:var(--text-lt);font-family:'Courier Prime',monospace;margin-right:8px}
+    .item-actions{display:flex;gap:4px;opacity:0;transition:opacity .12s}
+    .l1-item:hover .item-actions{opacity:1}
+    .btn-icon{background:none;border:none;cursor:pointer;font-size:14px;padding:3px 5px;border-radius:4px;transition:background .12s}
+    .btn-icon:hover{background:var(--parchment)}
+    .btn-icon.del:hover{background:rgba(181,76,47,.12)}
+    .l1-empty{padding:20px 18px;font-size:13px;color:var(--text-lt);font-style:italic;text-align:center}
+
+    /* ── RIGHT PANEL ── */
+    .right-panel{display:flex;flex-direction:column;gap:20px}
+    .empty-state{background:var(--warm-white);border:1px solid var(--parchment);border-radius:10px;padding:48px 32px;text-align:center;box-shadow:0 2px 10px rgba(46,31,15,.05)}
+    .empty-state-icon{font-size:36px;margin-bottom:12px;opacity:.4}
+    .empty-state-text{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--text-mid);margin-bottom:6px}
+    .empty-state-sub{font-size:12px;color:var(--text-lt)}
+
+    /* ── L2/L3 PANELS ── */
+    .l2-block{background:var(--warm-white);border:1px solid var(--parchment);border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(46,31,15,.05)}
+    .l2-head{background:var(--parchment);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--sand);flex-wrap:wrap;gap:8px}
+    .l2-head-left{display:flex;align-items:center;gap:10px}
+    .level-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--bronze);color:var(--warm-white);font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;letter-spacing:.08em}
+    .l2-head-title{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:600;color:var(--espresso)}
+    .l2-body{padding:12px 18px;display:flex;flex-direction:column;gap:10px}
+
+    /* Each L2 row */
+    .l2-row{border:1px solid var(--parchment);border-radius:7px;overflow:hidden}
+    .l2-row-head{display:flex;align-items:center;padding:10px 14px;background:rgba(201,185,154,.12);gap:10px;cursor:pointer}
+    .l2-row-head:hover{background:rgba(139,111,71,.08)}
+    .l2-row-name{flex:1;font-weight:600;font-size:14px;color:var(--bark)}
+    .l2-chevron{font-size:11px;color:var(--text-lt);transition:transform .15s}
+    .l2-row.open .l2-chevron{transform:rotate(90deg)}
+    .l2-row-actions{display:flex;gap:3px;opacity:0;transition:opacity .12s}
+    .l2-row-head:hover .l2-row-actions{opacity:1}
+    .l2-row-l3{padding:10px 14px;display:flex;flex-wrap:wrap;gap:8px;border-top:1px solid var(--parchment);display:none}
+    .l2-row.open .l2-row-l3{display:flex}
+    .l3-chip{display:flex;align-items:center;gap:6px;background:var(--cream);border:1px solid var(--sand);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--bark);font-weight:500}
+    .l3-chip .chip-del{background:none;border:none;color:var(--text-lt);cursor:pointer;font-size:12px;padding:0;line-height:1;transition:color .12s}
+    .l3-chip .chip-del:hover{color:var(--rust)}
+    .add-l3-btn{display:flex;align-items:center;gap:6px;background:none;border:1.5px dashed var(--sand);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--bronze);font-weight:600;cursor:pointer;transition:all .12s}
+    .add-l3-btn:hover{border-color:var(--bronze);background:rgba(139,111,71,.05)}
+
+    /* ── INLINE EDIT INPUT ── */
+    .inline-input{border:1px solid var(--bronze);background:#fff;border-radius:5px;padding:5px 10px;font-family:'Jost',sans-serif;font-size:13px;color:var(--text);outline:none;width:200px}
+    .inline-input:focus{box-shadow:0 0 0 3px rgba(139,111,71,.1)}
+    .inline-confirm{background:var(--bronze);border:none;border-radius:4px;padding:5px 12px;color:var(--warm-white);font-size:11px;font-weight:600;cursor:pointer;letter-spacing:.1em}
+    .inline-cancel{background:none;border:1px solid var(--sand);border-radius:4px;padding:5px 10px;color:var(--text-mid);font-size:11px;cursor:pointer}
+    .inline-form{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
+
+    /* ── TOAST / CONFIRM ── */
+    #admin-toast{position:fixed;top:24px;right:24px;background:var(--espresso);color:var(--warm-white);border-radius:8px;padding:12px 20px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:999;opacity:0;transition:opacity .2s;pointer-events:none}
+    #admin-toast.show{opacity:1}
+    #admin-toast.success{background:#3d5c3c}
+    #admin-toast.error{background:var(--rust)}
+
+    /* ── CONFIRM MODAL ── */
+    #confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000}
+    #confirm-box{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--warm-white);border-radius:10px;padding:28px;width:min(400px,90vw);z-index:1001;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+    #confirm-box.open,#confirm-overlay.open{display:block}
+    .confirm-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--espresso);margin-bottom:8px}
+    .confirm-msg{font-size:13px;color:var(--text-mid);line-height:1.6;margin-bottom:20px}
+    .confirm-btns{display:flex;justify-content:flex-end;gap:10px}
+    .btn-confirm-cancel{background:none;border:1px solid var(--sand);border-radius:6px;padding:9px 20px;color:var(--text-mid);font-family:'Jost',sans-serif;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+    .btn-confirm-ok{background:var(--rust);border:none;border-radius:6px;padding:9px 20px;color:#fff;font-family:'Jost',sans-serif;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+
+    .footer{text-align:center;margin-top:40px;font-size:10px;color:var(--text-lt);letter-spacing:.1em;opacity:.5}
+
+    @media(max-width:700px){
+      .main{grid-template-columns:1fr}
+      .header,.toolbar{padding:0 18px}
+      .main{padding:20px 18px 0}
+    }
+  </style>
+</head>
+<body>
+
+<div id="admin-toast"></div>
+<div id="confirm-overlay" onclick="cancelConfirm()"></div>
+<div id="confirm-box">
+  <div class="confirm-title" id="confirm-title">Delete Entry?</div>
+  <div class="confirm-msg" id="confirm-msg"></div>
+  <div class="confirm-btns">
+    <button class="btn-confirm-cancel" onclick="cancelConfirm()">Cancel</button>
+    <button class="btn-confirm-ok" id="confirm-ok-btn">Delete</button>
+  </div>
+</div>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <div class="header-inner">
+    <div class="header-left">
+      <div class="brand-eyebrow">Graham Architectural Products</div>
+      <div class="brand-name">Quality <span>Taxonomy</span> Manager</div>
+    </div>
+    <div class="header-right">
+      <a class="back-link" href="gap-voice-complaint-form.html">← Back to Complaint Form</a>
+      <div class="tax-count" id="tax-count-display"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOOLBAR ── */
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <div class="toolbar-label">Actions</div>
+    <button class="btn-tool primary" onclick="exportTaxonomy()">⬇ Export JSON</button>
+    <button class="btn-tool" onclick="document.getElementById('import-input').click()">⬆ Import JSON</button>
+    <input type="file" id="import-input" accept=".json" onchange="importTaxonomy(event)"/>
+    <div class="toolbar-sep"></div>
+    <button class="btn-tool" onclick="resetToDefaults()">↺ Reset to Defaults</button>
+    <div class="toolbar-sep"></div>
+    <div style="font-size:11px;color:var(--sand);opacity:.7;font-style:italic;">
+      Changes save automatically · Use Export/Import to sync across devices
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+  <!-- L1 Panel -->
+  <div>
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span>L1</span>Defect Families</div>
+        <button class="btn-add-sm" onclick="startAddL1()">＋ Add</button>
+      </div>
+      <div class="panel-body" id="l1-list"></div>
+      <div id="add-l1-form" style="display:none;padding:12px 18px;border-top:1px solid var(--parchment);">
+        <div style="font-size:10px;font-weight:600;letter-spacing:.15em;color:var(--text-mid);text-transform:uppercase;margin-bottom:8px;">New L1 Family Name</div>
+        <div class="inline-form">
+          <input class="inline-input" id="new-l1-input" placeholder="e.g. Thermal Performance" onkeydown="if(event.key==='Enter')confirmAddL1()"/>
+          <button class="inline-confirm" onclick="confirmAddL1()">Add</button>
+          <button class="inline-cancel" onclick="cancelAddL1()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="right-panel" id="right-panel">
+    <div class="empty-state">
+      <div class="empty-state-icon">📋</div>
+      <div class="empty-state-text">Select a defect family</div>
+      <div class="empty-state-sub">Click an L1 family on the left to view and manage its types and details.</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer" style="max-width:1100px;margin-left:auto;margin-right:auto;padding:32px 36px 0;">
+  Graham Architectural Products · Taxonomy Admin · Changes saved to this browser's local storage
+</div>
+
+<script>
+const TAX_KEY='gap_taxonomy';
+const DEFAULT_TAXONOMY={
+  "Surface / Cosmetic":{"Scratch":["Light scratch","Deep scratch"]},
+  "Dimensional / Fit / Function":{"Out of tolerance":["Length out"]},
+  "Finish / Coating":{"Color mismatch":["ΔE > spec"]}
+};
+
+function getTaxonomy(){try{const s=localStorage.getItem(TAX_KEY);if(s)return JSON.parse(s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_TAXONOMY));}
+function saveTaxonomy(t){try{localStorage.setItem(TAX_KEY,JSON.stringify(t));}catch(e){} refresh();}
+if(!localStorage.getItem(TAX_KEY)) saveTaxonomy(DEFAULT_TAXONOMY);
+
+let selectedL1=null;
+let confirmCallback=null;
+
+// ── Toast ─────────────────────────────────────────────────────────────
+function toast(msg,type='success'){
+  const el=document.getElementById('admin-toast');
+  el.textContent=msg; el.className='show '+(type||'');
+  setTimeout(()=>el.className='',2500);
+}
+
+// ── Confirm dialog ────────────────────────────────────────────────────
+function showConfirm(title,msg,onOk){
+  document.getElementById('confirm-title').textContent=title;
+  document.getElementById('confirm-msg').textContent=msg;
+  document.getElementById('confirm-overlay').classList.add('open');
+  document.getElementById('confirm-box').classList.add('open');
+  confirmCallback=onOk;
+  document.getElementById('confirm-ok-btn').onclick=()=>{cancelConfirm();onOk();};
+}
+function cancelConfirm(){
+  document.getElementById('confirm-overlay').classList.remove('open');
+  document.getElementById('confirm-box').classList.remove('open');
+  confirmCallback=null;
+}
+
+// ── Count display ─────────────────────────────────────────────────────
+function updateCount(){
+  const tax=getTaxonomy();
+  let l1=0,l2=0,l3=0;
+  for(const k of Object.keys(tax)){l1++;for(const k2 of Object.keys(tax[k])){l2++;l3+=tax[k][k2].length;}}
+  document.getElementById('tax-count-display').textContent=`${l1} families · ${l2} types · ${l3} details`;
+}
+
+// ── Render L1 list ────────────────────────────────────────────────────
+function renderL1List(){
+  const tax=getTaxonomy();
+  const list=document.getElementById('l1-list');
+  list.innerHTML='';
+  const keys=Object.keys(tax);
+  if(!keys.length){list.innerHTML='<div class="l1-empty">No families yet — add one above.</div>';return;}
+  keys.forEach(k=>{
+    const l2count=Object.keys(tax[k]).length;
+    const l3count=Object.values(tax[k]).reduce((a,v)=>a+v.length,0);
+    const item=document.createElement('div');
+    item.className='l1-item'+(selectedL1===k?' active':'');
+    item.innerHTML=`
+      <div class="l1-name">${k}</div>
+      <div class="l1-count">${l2count}/${l3count}</div>
+      <div class="item-actions">
+        <button class="btn-icon" title="Rename" onclick="startRenameL1(event,'${escQ(k)}')">✏️</button>
+        <button class="btn-icon del" title="Delete" onclick="deleteL1(event,'${escQ(k)}')">🗑️</button>
+      </div>
+    `;
+    item.addEventListener('click',()=>selectL1(k));
+    list.appendChild(item);
+  });
+}
+
+function selectL1(k){
+  selectedL1=k;
+  renderL1List();
+  renderRightPanel();
+}
+
+// ── Render right panel ────────────────────────────────────────────────
+function renderRightPanel(){
+  const rp=document.getElementById('right-panel');
+  if(!selectedL1){
+    rp.innerHTML=`<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">Select a defect family</div><div class="empty-state-sub">Click an L1 family on the left.</div></div>`;
+    return;
+  }
+  const tax=getTaxonomy();
+  const l2keys=Object.keys(tax[selectedL1]||{});
+  rp.innerHTML='';
+
+  const block=document.createElement('div'); block.className='l2-block';
+  const head=document.createElement('div'); head.className='l2-head';
+  head.innerHTML=`
+    <div class="l2-head-left">
+      <div class="level-badge">L2 / L3</div>
+      <div class="l2-head-title">${selectedL1}</div>
+    </div>
+    <button class="btn-add-sm" onclick="startAddL2()">＋ Add Type</button>
+  `;
+  block.appendChild(head);
+
+  const body=document.createElement('div'); body.className='l2-body';
+
+  if(!l2keys.length){
+    const empty=document.createElement('div');
+    empty.style.cssText='padding:16px;font-size:13px;color:var(--text-lt);font-style:italic;text-align:center;';
+    empty.textContent='No types yet — add one above.'; body.appendChild(empty);
+  } else {
+    l2keys.forEach(l2k=>{
+      const l3vals=tax[selectedL1][l2k]||[];
+      const row=document.createElement('div'); row.className='l2-row open';
+      row.innerHTML=`
+        <div class="l2-row-head">
+          <div class="l2-chevron">▶</div>
+          <div class="l2-row-name">${l2k}</div>
+          <span style="font-size:10px;color:var(--text-lt);font-family:'Courier Prime',monospace;margin-right:8px;">${l3vals.length} detail${l3vals.length!==1?'s':''}</span>
+          <div class="l2-row-actions">
+            <button class="btn-icon" title="Rename type" onclick="startRenameL2(event,'${escQ(l2k)}')">✏️</button>
+            <button class="btn-icon del" title="Delete type" onclick="deleteL2(event,'${escQ(l2k)}')">🗑️</button>
+          </div>
+        </div>
+        <div class="l2-row-l3" id="l3-zone-${escID(l2k)}"></div>
+      `;
+      row.querySelector('.l2-row-head').addEventListener('click',function(e){
+        if(e.target.closest('.l2-row-actions')) return;
+        row.classList.toggle('open');
+      });
+      body.appendChild(row);
+
+      // Populate L3 zone
+      const l3zone=row.querySelector(`#l3-zone-${escID(l2k)}`);
+      l3vals.forEach(l3v=>{
+        const chip=document.createElement('div'); chip.className='l3-chip';
+        chip.innerHTML=`${l3v} <button class="chip-del" title="Delete" onclick="deleteL3('${escQ(l2k)}','${escQ(l3v)}')">✕</button>`;
+        l3zone.appendChild(chip);
+      });
+      // Add L3 button
+      const addBtn=document.createElement('button'); addBtn.className='add-l3-btn';
+      addBtn.textContent='＋ Add detail';
+      addBtn.addEventListener('click',()=>startAddL3(l2k,l3zone,addBtn));
+      l3zone.appendChild(addBtn);
+    });
+  }
+
+  block.appendChild(body);
+
+  // Add L2 form (hidden)
+  const addL2Form=document.createElement('div');
+  addL2Form.id='add-l2-form';
+  addL2Form.style.cssText='display:none;padding:12px 18px;border-top:1px solid var(--parchment);';
+  addL2Form.innerHTML=`
+    <div style="font-size:10px;font-weight:600;letter-spacing:.15em;color:var(--text-mid);text-transform:uppercase;margin-bottom:8px;">New L2 Type under "${selectedL1}"</div>
+    <div class="inline-form">
+      <input class="inline-input" id="new-l2-input" placeholder="e.g. Thermal bridging" onkeydown="if(event.key==='Enter')confirmAddL2()"/>
+      <button class="inline-confirm" onclick="confirmAddL2()">Add</button>
+      <button class="inline-cancel" onclick="document.getElementById('add-l2-form').style.display='none'">Cancel</button>
+    </div>
+  `;
+  block.appendChild(addL2Form);
+  rp.appendChild(block);
+}
+
+// ── L1 operations ─────────────────────────────────────────────────────
+function startAddL1(){
+  document.getElementById('add-l1-form').style.display='block';
+  setTimeout(()=>document.getElementById('new-l1-input').focus(),50);
+}
+function cancelAddL1(){ document.getElementById('add-l1-form').style.display='none'; document.getElementById('new-l1-input').value=''; }
+function confirmAddL1(){
+  const val=document.getElementById('new-l1-input').value.trim();
+  if(!val){toast('Please enter a name.','error');return;}
+  const tax=getTaxonomy();
+  if(tax[val]){toast('That family already exists.','error');return;}
+  tax[val]={}; saveTaxonomy(tax);
+  cancelAddL1(); selectL1(val); toast(`✔ Added family "${val}"`);
+}
+
+function startRenameL1(e,k){ e.stopPropagation();
+  const newName=prompt(`Rename "${k}" to:`,k);
+  if(!newName||newName.trim()===k) return;
+  const nm=newName.trim();
+  const tax=getTaxonomy();
+  if(tax[nm]){toast('A family with that name already exists.','error');return;}
+  const val=tax[k]; delete tax[k];
+  const rebuilt={}; rebuilt[nm]=val;
+  Object.keys(tax).forEach(x=>rebuilt[x]=tax[x]);
+  saveTaxonomy(rebuilt);
+  if(selectedL1===k) selectedL1=nm;
+  toast(`✔ Renamed to "${nm}"`);
+}
+
+function deleteL1(e,k){ e.stopPropagation();
+  const tax=getTaxonomy();
+  const l2c=Object.keys(tax[k]||{}).length;
+  showConfirm(`Delete "${k}"?`,`This will permanently remove this family and all ${l2c} type(s) beneath it. This cannot be undone.`,()=>{
+    const tax2=getTaxonomy(); delete tax2[k]; saveTaxonomy(tax2);
+    if(selectedL1===k){selectedL1=null;}
+    toast(`Deleted "${k}"`);
+  });
+}
+
+// ── L2 operations ─────────────────────────────────────────────────────
+function startAddL2(){
+  const form=document.getElementById('add-l2-form');
+  if(form){form.style.display='block';setTimeout(()=>document.getElementById('new-l2-input').focus(),50);}
+}
+function confirmAddL2(){
+  const val=document.getElementById('new-l2-input').value.trim();
+  if(!val){toast('Please enter a type name.','error');return;}
+  const tax=getTaxonomy();
+  if(!tax[selectedL1]) tax[selectedL1]={};
+  if(tax[selectedL1][val]){toast('That type already exists.','error');return;}
+  tax[selectedL1][val]=[]; saveTaxonomy(tax);
+  toast(`✔ Added type "${val}" under "${selectedL1}"`);
+}
+
+function startRenameL2(e,l2k){ e.stopPropagation();
+  const newName=prompt(`Rename type "${l2k}" to:`,l2k);
+  if(!newName||newName.trim()===l2k) return;
+  const nm=newName.trim();
+  const tax=getTaxonomy();
+  if(tax[selectedL1][nm]){toast('That type already exists.','error');return;}
+  tax[selectedL1][nm]=tax[selectedL1][l2k];
+  delete tax[selectedL1][l2k];
+  saveTaxonomy(tax); toast(`✔ Renamed to "${nm}"`);
+}
+
+function deleteL2(e,l2k){ e.stopPropagation();
+  const tax=getTaxonomy();
+  const l3c=(tax[selectedL1]&&tax[selectedL1][l2k]?tax[selectedL1][l2k]:[]).length;
+  showConfirm(`Delete type "${l2k}"?`,`This will remove this type and its ${l3c} detail(s). Cannot be undone.`,()=>{
+    const t=getTaxonomy(); delete t[selectedL1][l2k]; saveTaxonomy(t); toast(`Deleted "${l2k}"`);
+  });
+}
+
+// ── L3 operations ─────────────────────────────────────────────────────
+function startAddL3(l2k, zone, btn){
+  // Remove existing inline forms
+  zone.querySelectorAll('.inline-form').forEach(f=>f.remove());
+  const form=document.createElement('div'); form.className='inline-form'; form.style.width='100%';
+  form.innerHTML=`<input class="inline-input" placeholder="New detail name…"/><button class="inline-confirm">Add</button><button class="inline-cancel">Cancel</button>`;
+  form.querySelector('.inline-confirm').addEventListener('click',()=>{
+    const val=form.querySelector('input').value.trim();
+    if(!val){toast('Please enter a detail name.','error');return;}
+    const tax=getTaxonomy();
+    if(!tax[selectedL1]||!tax[selectedL1][l2k]){toast('Parent type not found.','error');return;}
+    if(tax[selectedL1][l2k].includes(val)){toast('That detail already exists.','error');return;}
+    tax[selectedL1][l2k].push(val); saveTaxonomy(tax); toast(`✔ Added detail "${val}"`);
+  });
+  form.querySelector('.inline-cancel').addEventListener('click',()=>form.remove());
+  zone.insertBefore(form,btn);
+  setTimeout(()=>form.querySelector('input').focus(),50);
+}
+
+function deleteL3(l2k,l3v){
+  showConfirm(`Delete detail "${l3v}"?`,`This will permanently remove this detail from "${l2k}". Cannot be undone.`,()=>{
+    const tax=getTaxonomy();
+    if(tax[selectedL1]&&tax[selectedL1][l2k]){
+      tax[selectedL1][l2k]=tax[selectedL1][l2k].filter(x=>x!==l3v);
+      saveTaxonomy(tax); toast(`Deleted "${l3v}"`);
+    }
+  });
+}
+
+// ── Export / Import ───────────────────────────────────────────────────
+function exportTaxonomy(){
+  const tax=getTaxonomy();
+  const blob=new Blob([JSON.stringify(tax,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`GAP_Taxonomy_${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('✔ Taxonomy exported');
+}
+
+function importTaxonomy(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(typeof data!=='object'||Array.isArray(data)) throw new Error('Invalid format');
+      showConfirm('Import Taxonomy?',`This will replace your current taxonomy with the imported file. Make sure you have exported a backup first.`,()=>{
+        saveTaxonomy(data); selectedL1=null; toast('✔ Taxonomy imported successfully');
+      });
+    }catch(err){toast('Invalid JSON file. Please export a valid taxonomy first.','error');}
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+function resetToDefaults(){
+  showConfirm('Reset to Defaults?','This will replace your entire taxonomy with the original seed data. All custom entries will be lost.',()=>{
+    saveTaxonomy(JSON.parse(JSON.stringify(DEFAULT_TAXONOMY)));
+    selectedL1=null; toast('✔ Reset to default taxonomy');
+  });
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────
+function escQ(s){ return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function escID(s){ return s.replace(/[^a-zA-Z0-9]/g,'_'); }
+
+// ── Full refresh ──────────────────────────────────────────────────────
+function refresh(){
+  updateCount();
+  renderL1List();
+  renderRightPanel();
+}
+
+refresh();
+</script>
+</body>
+</html>
