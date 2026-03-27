@@ -434,41 +434,66 @@ function setPriority(btn) {
 
 // ── Speech Recognition ────────────────────────────────────────────────
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let activeRec=null, activeBtn=null;
+let activeRec=null, activeBtn=null, shouldRestart=false;
 if (!SR) document.getElementById('no-speech-banner').style.display='block';
+
+// Detect Android / mobile for auto-restart mode
+const IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 function showToast(t) { document.getElementById('toast-label').textContent=t; document.getElementById('speech-toast').classList.add('show'); }
 function hideToast() { document.getElementById('speech-toast').classList.remove('show'); }
 function stopActive() {
+  shouldRestart=false;
   if (activeRec) { try{activeRec.stop();}catch(e){} activeRec=null; }
   if (activeBtn) { activeBtn.classList.remove('recording'); activeBtn=null; }
   hideToast();
 }
 function capitalize(s) { return s.charAt(0).toUpperCase()+s.slice(1); }
 
+// Core: build a recognition session that auto-restarts on mobile
+function makeRec(onResult, onDone) {
+  const rec = new SR();
+  // Mobile Chrome doesn't support continuous — use single-shot + auto restart
+  rec.continuous = IS_MOBILE ? false : true;
+  rec.interimResults = true;
+  rec.lang = 'en-US';
+  rec.onresult = onResult;
+  rec.onerror = e => { if(e.error==='aborted') return; showToast('⚠ Mic: '+e.error); stopActive(); };
+  rec.onend = () => {
+    if (shouldRestart && activeBtn) {
+      // Auto-restart for mobile continuous simulation
+      try { const r2=makeRec(onResult,onDone); activeRec=r2; r2.start(); }
+      catch(e) { stopActive(); }
+    } else {
+      onDone && onDone();
+    }
+  };
+  return rec;
+}
+
 function startMic(btn) {
   if (!SR) return;
   if (activeBtn===btn) { stopActive(); return; }
   stopActive();
   const input = btn.closest('.mic-input-row').querySelector('input');
-  const interim = document.getElementById('interim-'+input.name);
-  const rec = new SR(); rec.continuous=true; rec.interimResults=true; rec.lang='en-US';
-  activeRec=rec; activeBtn=btn; btn.classList.add('recording');
-  showToast('Listening — click 🎤 again to stop');
+  const interimEl = document.getElementById('interim-'+input.name);
+  activeBtn=btn; btn.classList.add('recording'); shouldRestart=true;
+  showToast(IS_MOBILE ? 'Listening… tap 🎤 to stop' : 'Listening — click 🎤 again to stop');
   let final=input.value;
-  rec.onresult=e=>{
+
+  function onResult(e) {
     let tmp='';
     for(let i=e.resultIndex;i<e.results.length;i++){
       const t=e.results[i][0].transcript;
-      if(e.results[i].isFinal){final+=(final?' ':'')+capitalize(t.trim()); if(interim)interim.textContent='';}
+      if(e.results[i].isFinal){ final+=(final?' ':'')+capitalize(t.trim()); if(interimEl)interimEl.textContent=''; }
       else tmp=t;
     }
     input.value=final;
-    if(interim) interim.textContent=tmp?`"${tmp}"`:''
-  };
-  rec.onerror=e=>{ if(e.error!=='aborted') showToast('⚠ Mic: '+e.error); stopActive(); };
-  rec.onend=()=>{ if(activeBtn===btn) stopActive(); if(interim) interim.textContent=''; };
-  rec.start();
+    if(interimEl) interimEl.textContent=tmp?`"${tmp}"`:''  ;
+  }
+  function onDone() { if(interimEl) interimEl.textContent=''; }
+
+  const rec=makeRec(onResult,onDone); activeRec=rec; rec.start();
 }
 
 function startMicTa(btn) {
@@ -476,12 +501,12 @@ function startMicTa(btn) {
   if (activeBtn===btn) { stopActive(); return; }
   stopActive();
   const ta = btn.closest('.mic-ta-wrap').querySelector('textarea');
-  const interim = document.getElementById('interim-'+ta.name);
-  const rec = new SR(); rec.continuous=true; rec.interimResults=true; rec.lang='en-US';
-  activeRec=rec; activeBtn=btn; btn.classList.add('recording');
-  showToast('Listening — click 🎤 again to stop');
+  const interimEl = document.getElementById('interim-'+ta.name);
+  activeBtn=btn; btn.classList.add('recording'); shouldRestart=true;
+  showToast(IS_MOBILE ? 'Listening… tap 🎤 to stop' : 'Listening — click 🎤 again to stop');
   let final=ta.value;
-  rec.onresult=e=>{
+
+  function onResult(e) {
     let tmp='';
     for(let i=e.resultIndex;i<e.results.length;i++){
       const t=e.results[i][0].transcript;
@@ -489,14 +514,14 @@ function startMicTa(btn) {
         const tr=t.trim();
         if(final && !/[.!?,]$/.test(final.trimEnd())) final=final.trimEnd()+'. ';
         else if(final && !final.endsWith(' ')) final+=' ';
-        final+=capitalize(tr); if(interim)interim.textContent='';
+        final+=capitalize(tr); if(interimEl)interimEl.textContent='';
       } else tmp=t;
     }
-    ta.value=final; if(interim)interim.textContent=tmp?`"${tmp}"`:'' ; ta.scrollTop=ta.scrollHeight;
-  };
-  rec.onerror=e=>{ if(e.error!=='aborted') showToast('⚠ Mic: '+e.error); stopActive(); };
-  rec.onend=()=>{ if(activeBtn===btn) stopActive(); if(interim)interim.textContent=''; };
-  rec.start();
+    ta.value=final; if(interimEl)interimEl.textContent=tmp?`"${tmp}"`:'' ; ta.scrollTop=ta.scrollHeight;
+  }
+  function onDone() { if(interimEl) interimEl.textContent=''; }
+
+  const rec=makeRec(onResult,onDone); activeRec=rec; rec.start();
 }
 
 function startMicSelect(btn, sel, msgId) {
@@ -505,21 +530,22 @@ function startMicSelect(btn, sel, msgId) {
   stopActive();
   const msgEl = document.getElementById(msgId);
   const options = Array.from(sel.options).map(o=>o.value).filter(v=>v);
-  const rec = new SR(); rec.continuous=false; rec.interimResults=false; rec.lang='en-US';
-  activeRec=rec; activeBtn=btn; btn.classList.add('recording');
+  activeBtn=btn; btn.classList.add('recording'); shouldRestart=false;
   showToast('Say a taxonomy option…');
+
+  const rec = new SR(); rec.continuous=false; rec.interimResults=false; rec.lang='en-US';
   rec.onresult=e=>{
     const spoken=e.results[0][0].transcript.trim().toLowerCase();
     let best=null,bestScore=-1;
     for(const o of options){ const s=fuzzyScore(spoken,o.toLowerCase()); if(s>bestScore){bestScore=s;best=o;} }
     if(best&&bestScore>0){ sel.value=best; sel.dispatchEvent(new Event('change'));
-      if(msgEl){msgEl.textContent=`✔ Matched: "${best}"`;msgEl.className='voice-match-msg ok';}
-    } else if(msgEl){msgEl.textContent=`No match for "${spoken}" — try again or select manually`;msgEl.className='voice-match-msg err';}
+      if(msgEl){msgEl.textContent='✔ Matched: "'+best+'"';msgEl.className='voice-match-msg ok';}
+    } else if(msgEl){msgEl.textContent='No match for "'+spoken+'" — try again or select manually';msgEl.className='voice-match-msg err';}
     stopActive();
   };
   rec.onerror=e=>{ if(e.error!=='aborted'&&msgEl){msgEl.textContent='⚠ '+e.error;msgEl.className='voice-match-msg err';} stopActive(); };
   rec.onend=()=>{ if(activeBtn===btn) stopActive(); };
-  rec.start();
+  activeRec=rec; rec.start();
 }
 
 function fuzzyScore(a,b){
