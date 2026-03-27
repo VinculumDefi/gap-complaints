@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GAP — Customer Complaint System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      --cream:#f5f0e8;--warm-white:#faf7f2;--parchment:#ede5d4;--sand:#c9b99a;
+      --bronze:#8b6f47;--bronze-dk:#6b5135;--espresso:#2e1f0f;--bark:#4a3520;
+      --stone:#7a7060;--rust:#b54c2f;--sage:#6b7c6a;--amber:#d4880a;
+      --blue-int:#1e4a7a;--blue-lt:#e8f0fa;--mic-red:#d93025;
+      --text:#2e1f0f;--text-mid:#6b5a45;--text-lt:#9c8a75;
+      --green:#3d7a3d;--green-lt:#eaf4ea;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--cream);color:var(--text);font-family:'Jost',sans-serif;font-size:14px;min-height:100vh;padding-bottom:60px;
+      background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23c9b99a' fill-opacity='0.09'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+
+    /* ── SPEECH TOAST ── */
+    #speech-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--espresso);color:var(--warm-white);border-radius:50px;padding:10px 22px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;box-shadow:0 8px 28px rgba(0,0,0,.25);z-index:9999;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+    #speech-toast.show{opacity:1}
+    .toast-dot{width:10px;height:10px;border-radius:50%;background:var(--mic-red);flex-shrink:0;animation:micpulse 1s infinite}
+    @keyframes micpulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.6}}
+    #no-speech-banner{display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:7px;padding:10px 16px;margin:12px auto;font-size:12px;color:#856404;max-width:860px}
+
+    /* ── MIC ── */
+    .mic-input-row{position:relative;display:flex;align-items:stretch}
+    .mic-input-row input,.mic-input-row select{flex:1}
+    .mic-btn{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-lt);transition:background .15s,color .15s;z-index:2}
+    .mic-btn:hover{background:var(--parchment);color:var(--bronze)}
+    .mic-btn.recording{background:rgba(217,48,37,.12);color:var(--mic-red);animation:btn-pulse 1s infinite}
+    .mic-btn-static{position:static;transform:none;flex-shrink:0;background:none;border:none;cursor:pointer;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-lt);transition:background .15s,color .15s}
+    .mic-btn-static:hover{background:var(--parchment);color:var(--bronze)}
+    .mic-btn-static.recording{background:rgba(217,48,37,.12);color:var(--mic-red);animation:btn-pulse 1s infinite}
+    @keyframes btn-pulse{0%,100%{box-shadow:0 0 0 0 rgba(217,48,37,.3)}50%{box-shadow:0 0 0 6px rgba(217,48,37,0)}}
+    .mic-ta-wrap{position:relative}
+    .mic-ta-wrap textarea{padding-right:36px}
+    .mic-btn-ta{position:absolute;right:8px;bottom:8px;background:none;border:none;cursor:pointer;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text-lt);transition:background .15s,color .15s;z-index:2}
+    .mic-btn-ta:hover{background:var(--parchment);color:var(--bronze)}
+    .mic-btn-ta.recording{background:rgba(217,48,37,.12);color:var(--mic-red);animation:btn-pulse 1s infinite}
+    .interim-text{font-size:11px;color:var(--stone);font-style:italic;margin-top:4px;min-height:14px}
+    .voice-match-msg{font-size:10px;margin-top:4px;font-style:italic;min-height:14px}
+    .voice-match-msg.ok{color:var(--sage)}
+    .voice-match-msg.err{color:var(--rust)}
+
+    /* ── HEADER ── */
+    .header{background:var(--espresso);padding:0 36px;position:relative;overflow:hidden}
+    .header::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 120% at 100% 50%,rgba(139,111,71,.2) 0%,transparent 65%);pointer-events:none}
+    .header-inner{max-width:900px;margin:0 auto;display:flex;align-items:stretch;justify-content:space-between;position:relative}
+    .header-brand{padding:18px 0;display:flex;flex-direction:column;justify-content:center;gap:3px}
+    .brand-eyebrow{font-size:9px;font-weight:500;letter-spacing:.3em;color:var(--sand);text-transform:uppercase;opacity:.7}
+    .brand-name{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:var(--warm-white);letter-spacing:.02em}
+    .brand-name span{color:var(--sand)}
+    .header-right{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:5px;padding:18px 0 18px 28px;border-left:1px solid rgba(201,185,154,.15)}
+    .case-id-display{font-family:'Courier Prime',monospace;font-size:14px;font-weight:700;color:var(--sand)}
+    .case-date-display{font-size:10px;color:var(--stone)}
+    .admin-link{font-size:9px;font-weight:500;letter-spacing:.15em;color:var(--stone);text-transform:uppercase;text-decoration:none;border:1px solid rgba(201,185,154,.2);border-radius:3px;padding:3px 9px;transition:background .15s}
+    .admin-link:hover{background:rgba(201,185,154,.1);color:var(--sand)}
+
+    /* ── PRIORITY STRIP ── */
+    .priority-strip{background:var(--bark);padding:0 36px}
+    .priority-inner{max-width:900px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:9px 0;flex-wrap:wrap;gap:12px}
+    .priority-left{display:flex;align-items:center;gap:16px}
+    .meta-chip{display:flex;flex-direction:column;gap:1px}
+    .meta-chip-label{font-size:8px;font-weight:500;letter-spacing:.22em;color:var(--sand);text-transform:uppercase;opacity:.6}
+    .meta-chip-val{font-family:'Courier Prime',monospace;font-size:12px;color:var(--parchment)}
+    .chip-sep{width:1px;height:24px;background:rgba(201,185,154,.15)}
+    .priority-wrap{display:flex;align-items:center;gap:8px}
+    .priority-lbl{font-size:9px;font-weight:500;letter-spacing:.2em;color:var(--sand);text-transform:uppercase;opacity:.65}
+    .priority-btns{display:flex;gap:5px}
+    .p-btn{border:1px solid transparent;border-radius:4px;padding:4px 10px;font-family:'Jost',sans-serif;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .15s;background:rgba(255,255,255,.05);color:var(--stone)}
+    .p-btn.active-low{background:rgba(107,124,106,.25);border-color:var(--sage);color:#a8c4a6}
+    .p-btn.active-medium{background:rgba(212,136,10,.2);border-color:var(--amber);color:#f0b040}
+    .p-btn.active-high{background:rgba(181,76,47,.25);border-color:var(--rust);color:#e07060}
+    .p-btn.active-critical{background:rgba(181,76,47,.45);border-color:#e03020;color:#ff8070}
+
+    /* ── WIZARD PROGRESS ── */
+    .wizard-nav{background:var(--warm-white);border-bottom:1px solid var(--parchment);padding:0 36px;box-shadow:0 2px 8px rgba(46,31,15,.06)}
+    .wizard-nav-inner{max-width:900px;margin:0 auto;display:flex;align-items:stretch}
+    .wz-tab{display:flex;align-items:center;gap:7px;padding:13px 16px;cursor:pointer;border-bottom:3px solid transparent;font-size:12px;font-weight:500;color:var(--text-lt);transition:all .15s;white-space:nowrap;position:relative}
+    .wz-tab:hover{color:var(--bark);background:rgba(139,111,71,.04)}
+    .wz-tab.active{color:var(--bronze-dk);border-bottom-color:var(--bronze);font-weight:600}
+    .wz-tab.done{color:var(--sage)}
+    .wz-tab.done .wz-num{background:var(--sage);color:#fff}
+    .wz-num{width:20px;height:20px;border-radius:50%;background:var(--parchment);color:var(--text-lt);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+    .wz-tab.active .wz-num{background:var(--bronze);color:#fff}
+
+    /* ── BODY ── */
+    .body{max-width:900px;margin:0 auto;padding:28px 36px 0}
+
+    /* ── STEP PANELS ── */
+    .step-panel{display:none}
+    .step-panel.active{display:block}
+    .step-header{margin-bottom:22px}
+    .step-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--espresso);letter-spacing:.02em}
+    .step-sub{font-size:12px;color:var(--text-lt);margin-top:4px}
+
+    /* ── CARD ── */
+    .card{background:var(--warm-white);border:1px solid var(--parchment);border-radius:10px;padding:22px;box-shadow:0 2px 10px rgba(46,31,15,.05);margin-bottom:18px}
+    .card.agent-card{background:var(--blue-lt);border-color:rgba(30,74,122,.2)}
+    .card.ca-card{background:#fdf9f5;border-color:var(--sand)}
+    .card-title{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:600;color:var(--bark);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--parchment);display:flex;align-items:center;gap:8px}
+    .card-title-badge{font-size:9px;font-weight:600;letter-spacing:.15em;background:var(--bronze);color:#fff;padding:2px 7px;border-radius:3px;text-transform:uppercase}
+
+    /* ── FIELDS ── */
+    .fg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+    .fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+    .fg1{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:14px}
+    .fg:last-child,.fg3:last-child,.fg1:last-child{margin-bottom:0}
+    .field label{display:block;font-size:10px;font-weight:600;letter-spacing:.16em;color:var(--text-mid);text-transform:uppercase;margin-bottom:6px}
+    .field label .req{color:var(--rust);margin-left:2px}
+    .field label .opt{font-weight:300;font-size:9px;color:var(--text-lt);letter-spacing:.06em;text-transform:none;margin-left:3px}
+    input[type="text"],input[type="email"],input[type="tel"],input[type="datetime-local"],input[type="date"],select,textarea{width:100%;background:var(--cream);border:1px solid var(--sand);border-radius:6px;padding:9px 32px 9px 12px;color:var(--text);font-family:'Jost',sans-serif;font-size:14px;outline:none;appearance:none;-webkit-appearance:none;transition:border-color .2s,box-shadow .2s}
+    input[type="datetime-local"],input[type="date"]{padding-right:12px}
+    input:focus,select:focus,textarea:focus{border-color:var(--bronze);box-shadow:0 0 0 3px rgba(139,111,71,.1);background:#fff}
+    .agent-card input,.agent-card select{background:rgba(255,255,255,.7);border-color:rgba(30,74,122,.25)}
+    .agent-card input:focus,.agent-card select:focus{border-color:var(--blue-int);box-shadow:0 0 0 3px rgba(30,74,122,.1)}
+    select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b6f47' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:30px}
+    textarea{resize:vertical;min-height:80px;line-height:1.6;padding:9px 12px}
+    ::placeholder{color:var(--text-lt);opacity:.7}
+    select:disabled{opacity:.4;cursor:not-allowed}
+    .field-hint{font-size:10px;color:var(--text-lt);margin-top:4px;font-style:italic}
+
+    /* ── TAXONOMY BLOCK ── */
+    .taxonomy-block{background:var(--parchment);border:1px solid var(--sand);border-left:3px solid var(--bronze);border-radius:7px;padding:14px 16px;margin-bottom:14px}
+    .tax-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+    .tax-header-text{font-size:10px;font-weight:600;letter-spacing:.18em;color:var(--bronze-dk);text-transform:uppercase}
+    .tax-tag{font-size:9px;font-weight:600;letter-spacing:.12em;background:rgba(139,111,71,.12);color:var(--bronze-dk);border:1px solid rgba(139,111,71,.2);padding:2px 6px;border-radius:3px;text-transform:uppercase}
+    .btn-add-tax{margin-left:auto;background:var(--bronze);border:none;border-radius:4px;padding:5px 12px;color:#fff;font-family:'Jost',sans-serif;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:opacity .15s}
+    .btn-add-tax:hover{opacity:.85}
+    .tax-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .tax-field label{font-size:10px;font-weight:600;letter-spacing:.13em;color:var(--bronze-dk);text-transform:uppercase;margin-bottom:5px;display:block}
+    .tax-field label .req{color:var(--rust);margin-left:2px}
+    .tax-level-badge{display:inline-block;background:var(--bronze);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:2px;margin-right:4px;letter-spacing:.06em}
+    .tax-select-row{display:flex;align-items:center;gap:5px}
+    .tax-select-row select{flex:1}
+
+    /* ── ISSUE COUNT BAR ── */
+    .issue-count-bar{display:flex;align-items:center;gap:12px;background:var(--parchment);border-radius:8px;padding:11px 16px;margin-bottom:16px}
+    .issue-count-bar label{font-size:12px;font-weight:500;color:var(--bark);margin:0;white-space:nowrap}
+    .issue-count-bar select{max-width:68px;padding:6px 28px 6px 10px;font-size:15px;font-weight:600}
+
+    /* ── ISSUE CARDS ── */
+    #issues-wrap{display:flex;flex-direction:column;gap:16px}
+    .issue-card{background:var(--warm-white);border:1px solid var(--parchment);border-top:3px solid var(--bronze);border-radius:8px;padding:18px 20px;animation:fadeUp .2s ease}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    .issue-card-head{display:flex;align-items:center;gap:9px;margin-bottom:16px;padding-bottom:11px;border-bottom:1px solid var(--parchment)}
+    .issue-num-badge{background:var(--bronze);color:#fff;font-family:'Cormorant Garamond',serif;font-size:13px;font-weight:700;width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .issue-card-label{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--espresso)}
+
+    /* ── PRODUCT SELECTOR ── */
+    .product-block{background:var(--parchment);border:1px solid var(--sand);border-left:3px solid var(--amber);border-radius:7px;padding:14px 16px;margin-bottom:14px}
+    .product-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+    /* ── CORRECTIVE ACTION ── */
+    .ca-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+    .ca-box{background:var(--warm-white);border:1px solid var(--parchment);border-radius:7px;padding:14px}
+    .ca-box.pending{border-color:var(--amber);border-left:3px solid var(--amber)}
+    .ca-box.complete{border-color:var(--sage);border-left:3px solid var(--sage)}
+    .ca-box-title{font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--text-mid);margin-bottom:10px}
+    .ca-box.pending .ca-box-title{color:var(--amber)}
+    .ca-box.complete .ca-box-title{color:var(--sage)}
+    .checkbox-row{display:flex;align-items:center;gap:8px;margin-top:10px}
+    .checkbox-row input[type="checkbox"]{width:16px;height:16px;cursor:pointer;accent-color:var(--bronze)}
+    .checkbox-row label{font-size:12px;color:var(--text-mid);cursor:pointer;margin:0;letter-spacing:0;text-transform:none;font-weight:400}
+
+    /* ── NOTES ── */
+    .notes-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+    .note-entry{background:var(--warm-white);border:1px solid var(--parchment);border-radius:7px;padding:12px 14px}
+    .note-meta{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+    .note-author{font-size:11px;font-weight:600;color:var(--bronze-dk)}
+    .note-time{font-family:'Courier Prime',monospace;font-size:10px;color:var(--text-lt)}
+    .note-text{font-size:13px;color:var(--text);line-height:1.6}
+    .note-add-area{background:var(--parchment);border-radius:7px;padding:12px}
+    .note-add-label{font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--text-mid);margin-bottom:8px}
+    .btn-add-note{background:var(--bronze);border:none;border-radius:5px;padding:8px 20px;color:#fff;font-family:'Jost',sans-serif;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;margin-top:8px;transition:opacity .15s}
+    .btn-add-note:hover{opacity:.85}
+
+    /* ── ATTACHMENTS ── */
+    .upload-zone{border:1.5px dashed var(--sand);border-radius:7px;padding:24px;text-align:center;cursor:pointer;position:relative;background:var(--cream);transition:border-color .2s,background .2s}
+    .upload-zone:hover,.upload-zone.over{border-color:var(--bronze);background:rgba(139,111,71,.04)}
+    .upload-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+    .up-text{font-size:13px;font-weight:500;color:var(--bark)}
+    .up-text strong{color:var(--bronze)}
+    .up-sub{font-size:11px;color:var(--text-lt);margin-top:4px}
+    .file-list{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+    .file-chip{display:flex;align-items:center;gap:8px;background:var(--parchment);border:1px solid var(--sand);border-radius:5px;padding:7px 12px;font-size:12px}
+    .fc-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--bark);font-weight:500}
+    .fc-size{color:var(--text-lt);font-size:11px}
+    .fc-rm{background:none;border:none;color:var(--rust);cursor:pointer;font-size:13px;opacity:.7}
+    .fc-rm:hover{opacity:1}
+
+    /* ── INTERNAL NOTE CARD ── */
+    .int-card{background:var(--blue-lt);border:1px solid rgba(30,74,122,.2);border-left:3px solid var(--blue-int);border-radius:7px;padding:14px 16px;margin-top:10px}
+    .int-card-label{font-size:10px;font-weight:600;letter-spacing:.18em;color:var(--blue-int);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+    .int-card textarea{background:rgba(255,255,255,.75);border-color:rgba(30,74,122,.25)}
+    .int-card textarea:focus{border-color:var(--blue-int);box-shadow:0 0 0 3px rgba(30,74,122,.1)}
+    .int-hint{font-size:10px;color:var(--blue-int);opacity:.6;margin-top:5px;font-style:italic}
+
+    /* ── NAV BUTTONS ── */
+    .wizard-footer{max-width:900px;margin:28px auto 0;padding:0 36px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .btn-prev{background:none;border:1px solid var(--sand);border-radius:6px;padding:11px 24px;color:var(--text-mid);font-family:'Jost',sans-serif;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+    .btn-prev:hover{border-color:var(--bronze);color:var(--bronze)}
+    .btn-prev:disabled{opacity:.3;cursor:not-allowed}
+    .btn-next{background:linear-gradient(135deg,var(--bronze-dk),var(--bronze));border:none;border-radius:6px;padding:11px 28px;color:#fff;font-family:'Jost',sans-serif;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 14px rgba(107,81,53,.3);transition:opacity .2s,transform .15s}
+    .btn-next:hover{opacity:.9;transform:translateY(-1px)}
+    .btn-next:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+    .step-indicator{font-size:11px;color:var(--text-lt);font-family:'Courier Prime',monospace}
+
+    /* ── STATUS ── */
+    #status-msg{display:none;margin-top:16px;padding:14px 18px;border-radius:7px;font-size:13px;line-height:1.6}
+    #status-msg.success{display:block;background:var(--green-lt);border:1px solid var(--sage);color:var(--green)}
+    #status-msg.error{display:block;background:rgba(181,76,47,.07);border:1px solid var(--rust);color:var(--rust)}
+
+    /* ── TAXONOMY MODAL ── */
+    #modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;backdrop-filter:blur(2px)}
+    #guided-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(560px,94vw);background:var(--warm-white);border-radius:12px;z-index:1001;box-shadow:0 24px 60px rgba(0,0,0,.28);overflow:hidden;flex-direction:column;max-height:88vh}
+    #guided-modal.open{display:flex}
+    .modal-head{background:var(--espresso);padding:18px 22px;flex-shrink:0;position:relative}
+    .modal-step-track{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+    .modal-step-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:12px;font-weight:700;border:2px solid rgba(201,185,154,.25);color:var(--stone);transition:all .2s;flex-shrink:0}
+    .modal-step-dot.active{background:var(--bronze);border-color:var(--bronze);color:#fff}
+    .modal-step-dot.done{background:rgba(107,124,106,.4);border-color:var(--sage);color:#a8c4a6}
+    .modal-step-line{flex:1;height:1px;background:rgba(201,185,154,.2)}
+    .modal-head-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--warm-white)}
+    .modal-head-sub{font-size:11px;color:var(--stone);margin-top:2px}
+    .modal-close-btn{position:absolute;top:16px;right:18px;background:none;border:none;color:var(--stone);font-size:20px;cursor:pointer;padding:2px 6px;border-radius:4px}
+    .modal-close-btn:hover{background:rgba(255,255,255,.08);color:var(--sand)}
+    .modal-body{padding:20px 22px;overflow-y:auto;flex:1}
+    .modal-subtitle{font-size:13px;color:var(--text-mid);margin-bottom:14px;line-height:1.6}
+    .tax-options-grid{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+    .tax-pill{display:flex;align-items:center;gap:9px;border:1.5px solid var(--sand);border-radius:6px;padding:10px 13px;cursor:pointer;transition:all .15s;background:var(--cream);font-size:14px;color:var(--text)}
+    .tax-pill::before{content:'○';font-size:14px;color:var(--sand);flex-shrink:0;transition:all .15s}
+    .tax-pill:hover{border-color:var(--bronze);background:rgba(139,111,71,.05)}
+    .tax-pill.selected{border-color:var(--bronze);background:rgba(139,111,71,.08);font-weight:600}
+    .tax-pill.selected::before{content:'●';color:var(--bronze)}
+    .tax-pill.add-new-pill{border-style:dashed;color:var(--bronze-dk);font-weight:500}
+    .tax-pill.add-new-pill::before{content:'＋';font-size:13px;color:var(--bronze)}
+    .modal-or-divider{text-align:center;font-size:11px;color:var(--text-lt);letter-spacing:.12em;margin:10px 0;position:relative}
+    .modal-or-divider::before,.modal-or-divider::after{content:'';position:absolute;top:50%;width:38%;height:1px;background:var(--parchment)}
+    .modal-or-divider::before{left:0}
+    .modal-or-divider::after{right:0}
+    .new-entry-wrap{margin-top:12px;padding:12px;background:rgba(139,111,71,.05);border:1px solid rgba(139,111,71,.18);border-radius:7px}
+    .new-entry-wrap label{font-size:10px;font-weight:600;letter-spacing:.16em;color:var(--bronze-dk);text-transform:uppercase;display:block;margin-bottom:7px}
+    .new-entry-wrap input{padding-right:36px}
+    .new-entry-hint{font-size:10px;color:var(--text-lt);margin-top:6px;font-style:italic;line-height:1.5}
+    .modal-error{background:rgba(181,76,47,.07);border:1px solid var(--rust);color:var(--rust);border-radius:5px;padding:9px 13px;font-size:12px;margin-top:10px;display:none}
+    .modal-error.show{display:block}
+    .modal-foot{padding:14px 22px;border-top:1px solid var(--parchment);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;background:var(--warm-white)}
+    .btn-modal-back{background:none;border:1px solid var(--sand);border-radius:5px;padding:8px 18px;color:var(--text-mid);font-family:'Jost',sans-serif;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+    .btn-modal-back:hover{border-color:var(--bronze);color:var(--bronze)}
+    .btn-modal-back:disabled{opacity:.3;cursor:not-allowed}
+    .btn-modal-next{background:linear-gradient(135deg,var(--bronze-dk),var(--bronze));border:none;border-radius:5px;padding:8px 20px;color:#fff;font-family:'Jost',sans-serif;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:opacity .15s}
+    .btn-modal-next:hover{opacity:.88}
+    .modal-progress{font-size:10px;color:var(--text-lt);letter-spacing:.1em;text-transform:uppercase}
+
+    .footer{text-align:center;padding:36px 36px 0;font-size:10px;color:var(--text-lt);letter-spacing:.1em;opacity:.5}
+
+    @media(max-width:640px){
+      .header,.priority-strip,.wizard-nav,.body,.wizard-footer{padding-left:16px;padding-right:16px}
+      .fg,.fg3,.ca-grid,.tax-row,.product-row{grid-template-columns:1fr}
+      .wz-tab span.wz-label{display:none}
+    }
+  </style>
+</head>
+<body>
+
+<div id="speech-toast"><div class="toast-dot"></div><span id="toast-label">Listening...</span></div>
+<div id="no-speech-banner">Speech recognition not available. Use Chrome or Edge for voice dictation. All fields still work via keyboard.</div>
+
+<!-- TAXONOMY MODAL -->
+<div id="modal-overlay" onclick="closeModal()"></div>
+<div id="guided-modal" role="dialog">
+  <div class="modal-head">
+    <div class="modal-step-track" id="modal-step-track"></div>
+    <div class="modal-head-title" id="modal-head-title">Select Defect Family</div>
+    <div class="modal-head-sub" id="modal-head-sub"></div>
+    <button class="modal-close-btn" onclick="closeModal()">x</button>
+  </div>
+  <div class="modal-body" id="modal-body"></div>
+  <div class="modal-foot">
+    <button class="btn-modal-back" id="modal-back-btn" onclick="modalBack()">Back</button>
+    <div class="modal-progress" id="modal-progress">Step 1 of 3</div>
+    <button class="btn-modal-next" id="modal-next-btn" onclick="modalNext()">Next</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div class="header-brand">
+      <div class="brand-eyebrow">Internal Quality Record</div>
+      <div class="brand-name">Graham <span>Architectural</span> Products</div>
+    </div>
+    <div class="header-right">
+      <div class="case-id-display" id="case-id-display">Loading...</div>
+      <div class="case-date-display" id="case-date-display"></div>
+      <a class="admin-link" href="gap-taxonomy-admin.html" target="_blank">Taxonomy Admin</a>
+    </div>
+  </div>
+</div>
+
+<!-- PRIORITY STRIP -->
+<div class="priority-strip">
+  <div class="priority-inner">
+    <div class="priority-left">
+      <div class="meta-chip"><div class="meta-chip-label">Status</div><div class="meta-chip-val" style="color:#d4a96a;">New</div></div>
+      <div class="chip-sep"></div>
+      <div class="meta-chip"><div class="meta-chip-label">Case</div><div class="meta-chip-val" id="case-id-strip">--</div></div>
+    </div>
+    <div class="priority-wrap">
+      <div class="priority-lbl">Priority</div>
+      <div class="priority-btns">
+        <button type="button" class="p-btn" data-val="Low" onclick="setPriority(this)">Low</button>
+        <button type="button" class="p-btn" data-val="Medium" onclick="setPriority(this)">Medium</button>
+        <button type="button" class="p-btn" data-val="High" onclick="setPriority(this)">High</button>
+        <button type="button" class="p-btn" data-val="Critical" onclick="setPriority(this)">Critical</button>
+      </div>
+      <input type="hidden" id="priority-val" value=""/>
+    </div>
+  </div>
+</div>
+
+<!-- WIZARD NAV -->
+<div class="wizard-nav">
+  <div class="wizard-nav-inner" id="wizard-nav"></div>
+</div>
+
+<!-- FORM BODY -->
+<form id="complaint-form" novalidate>
+<input type="hidden" id="hid-case" name="case_id"/>
+<div class="body">
+
+  <!-- ══ STEP 1: CASE HEADER ══ -->
+  <div class="step-panel active" id="step-1">
+    <div class="step-header">
+      <div class="step-title">Case Header</div>
+      <div class="step-sub">Agent information and customer contact details</div>
+    </div>
+
+    <div class="card agent-card">
+      <div class="card-title"><span class="card-title-badge">Agent</span> Who is logging this complaint?</div>
+      <div class="fg3">
+        <div class="field"><label>Agent Name <span class="req">*</span></label>
+          <div class="mic-input-row"><input type="text" name="agent_name" placeholder="Your full name" required/><button type="button" class="mic-btn" onclick="startMic(this)">&#127908;</button></div></div>
+        <div class="field"><label>Agent ID <span class="opt">(optional)</span></label>
+          <div class="mic-input-row"><input type="text" name="agent_id" placeholder="e.g. GAP-A042"/><button type="button" class="mic-btn" onclick="startMic(this)">&#127908;</button></div></div>
+        <div class="field"><label>Date &amp; Time of Call <span class="req">*</span></label>
+          <input type="datetime-local" name="call_datetime" required/></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Customer Information</div>
+      <div class="fg">
+        <div class="field"><label>Customer Name <span class="req">*</span></label>
+          <div class="mic-input-row"><input type="text" name="customer_name" placeholder="Full name" required/><button type="button" class="mic-btn" onclick="startMic(this)">&#127908;</button></div></div>
+        <div class="field"><label>Company <span class="opt">(optional)</span></label>
+          <div class="mic-input-row"><input type="text" name="customer_company" placeholder="Company name"/><button type="button" class="mic-btn" onclick="startMic(this)">&#127908;</button></div></div>
+      </div>
+      <div class="fg">
+        <div class="field"><label>Email <span class="opt">(optional)</span></label>
+          <div class="mic-input-row"><input type="email" name="customer_email" placeholder="email@company.com"/><button type="button" class="mic-btn" onclick="startMic(this)">&#127908;</button></div></div>
+        <div class="field"><label>Phone <span class="opt">(optional)</span></label>
+          <div class="mic-input-row"><input type="tel" name="customer_phone" placeholder="(555) 000-0000"/><button type="button" class="mic-btn" onclick="startMic(this)">&#127908;</button></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ STEP 2: PROJECT & PRODUCT ══ -->
+  <div class="step-panel" id="step-2">
+    <div class="step-header">
+      <div class="step-title">Project &amp; Product</div>
+      <div class="step-sub">Job details and the specific window product involved</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Project Details</div>
+      <div class="fg">
+        <div class="field"><label>Project / Job Name <span class="req">*</span></label>
+          <div class="mic-input-row"><input type="text" name="project_name" placeholder="Building or project name" required/><button type="button" class="mic-btn" onclick="startMic(this)">&#127908;</button></div></div>
+        <div class="field"><label>Graham Order / PO # <span class="opt">(optional)</span></label>
+          <div class="mic-input-row"><input type="text" name="order_number" placeholder="e.g. GAP-2024-XXXXX"/><button type="button" class="mic-btn" onclick="startMic(this)">&#127908;</button></div></div>
+      </div>
+      <div class="fg">
+        <div class="field"><label>Project Address <span class="opt">(optional)</span></label>
+          <div class="mic-input-row"><input type="text" name="project_address" placeholder="Street, City, State, ZIP"/><button type="button" class="mic-btn" onclick="startMic(this)">&#127908;</button></div></div>
+        <div class="field"><label>Sales Representative <span class="opt">(optional)</span></label>
+          <div class="mic-input-row"><input type="text" name="sales_rep" placeholder="Rep name"/><button type="button" class="mic-btn" onclick="startMic(this)">&#127908;</button></div></div>
+      </div>
+      <div class="fg">
+        <div class="field"><label>Installation Date <span class="opt">(approx.)</span></label>
+          <div class="mic-input-row"><input type="text" name="install_date" placeholder="Month / Year"/><button type="button" class="mic-btn" onclick="startMic(this)">&#127908;</button></div></div>
+        <div class="field"><label>Complaint Status</label>
+          <select name="complaint_status">
+            <option value="Open">Open</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Pending Customer">Pending Customer</option>
+            <option value="Resolved">Resolved</option>
+            <option value="Closed">Closed</option>
+          </select></div>
+      </div>
+    </div>
+
+    <div class="product-block">
+      <div class="tax-header">
+        <div class="tax-header-text" style="color:#7a5200;">Product / Window Model</div>
+        <div class="tax-tag" style="background:rgba(212,136,10,.1);color:#7a5200;border-color:rgba(212,136,10,.25);">From Your Product Line</div>
+      </div>
+      <div class="product-row">
+        <div class="field">
+          <label>Product Type <span class="req">*</span></label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select id="product-type-sel" name="product_type" onchange="updateModels()" required style="flex:1;">
+              <option value="">-- Select Type --</option>
+            </select>
+            <button type="button" class="mic-btn-static" onclick="startMicSelect(this, document.getElementById('product-type-sel'), 'vm-product-type')" title="Dictate">&#127908;</button>
+          </div>
+          <div class="voice-match-msg" id="vm-product-type"></div>
+        </div>
+        <div class="field">
+          <label>Model Number <span class="req">*</span></label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select id="product-model-sel" name="product_model" required style="flex:1;" disabled>
+              <option value="">-- Select Type First --</option>
+            </select>
+            <button type="button" class="mic-btn-static" onclick="startMicSelect(this, document.getElementById('product-model-sel'), 'vm-product-model')" title="Dictate">&#127908;</button>
+          </div>
+          <div class="voice-match-msg" id="vm-product-model"></div>
+        </div>
+      </div>
+      <div class="fg1" style="margin-top:10px;margin-bottom:0;">
+        <div class="field"><label>Unit / Frame ID <span class="opt">(optional)</span></label>
+          <div class="mic-input-row"><input type="text" name="unit_id" placeholder="e.g. W-04, FR-12, Unit 7"/><button type="button" class="mic-btn" onclick="startMic(this)">&#127908;</button></div>
+          <div class="field-hint">From your order or shop drawing — helps locate the specific unit</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ STEP 3: ISSUES ══ -->
+  <div class="step-panel" id="step-3">
+    <div class="step-header">
+      <div class="step-title">Issue Details</div>
+      <div class="step-sub">Classify each defect using the quality taxonomy</div>
+    </div>
+    <div class="issue-count-bar">
+      <label for="issue-count">How many issues are you reporting?</label>
+      <select id="issue-count">
+        <option>1</option><option>2</option><option>3</option><option>4</option>
+        <option>5</option><option>6</option><option>7</option><option>8</option>
+      </select>
+      <div style="font-size:11px;color:var(--text-lt);font-style:italic;">Each issue gets its own L1 / L2 / L3 classification</div>
+    </div>
+    <div id="issues-wrap"></div>
+  </div>
+
+  <!-- ══ STEP 4: CORRECTIVE ACTION ══ -->
+  <div class="step-panel" id="step-4">
+    <div class="step-header">
+      <div class="step-title">Corrective Action</div>
+      <div class="step-sub">Resolution plan, investigation, and follow-up</div>
+    </div>
+
+    <div class="card ca-card">
+      <div class="card-title">Action &amp; Responsibility</div>
+      <div class="fg">
+        <div class="field"><label>Action Type <span class="req">*</span></label>
+          <select name="ca_action_type" id="ca-action-type" required>
+            <option value="">-- Select --</option>
+          </select></div>
+        <div class="field"><label>Responsible Party <span class="req">*</span></label>
+          <select name="ca_responsible_party" id="ca-responsible-party" required>
+            <option value="">-- Select --</option>
+          </select></div>
+      </div>
+      <div class="fg">
+        <div class="field"><label>Auto Notify Responsible Party</label>
+          <div class="checkbox-row" style="margin-top:6px;">
+            <input type="checkbox" id="auto-email" name="ca_auto_email" value="yes"/>
+            <label for="auto-email">Send email notification when saved</label>
+          </div></div>
+        <div class="field"><label>Target Close Date</label>
+          <input type="date" name="ca_close_date"/></div>
+      </div>
+    </div>
+
+    <div class="ca-grid">
+      <div class="ca-box pending">
+        <div class="ca-box-title">Investigation Required</div>
+        <div class="field" style="margin-bottom:8px;"><label>Description</label>
+          <div class="mic-ta-wrap">
+            <textarea name="ca_investigation_required" placeholder="What needs to be investigated? Who is responsible?"></textarea>
+            <button type="button" class="mic-btn-ta" onclick="startMicTa(this)">&#127908;</button>
+          </div>
+          <div class="interim-text" id="interim-ca_investigation_required"></div>
+        </div>
+        <div class="field"><label>Due Date</label>
+          <input type="date" name="ca_investigation_due"/></div>
+      </div>
+      <div class="ca-box complete">
+        <div class="ca-box-title">Investigation Results</div>
+        <div class="field" style="margin-bottom:8px;"><label>Findings</label>
+          <div class="mic-ta-wrap">
+            <textarea name="ca_investigation_results" placeholder="What was found? Root cause identified?"></textarea>
+            <button type="button" class="mic-btn-ta" onclick="startMicTa(this)">&#127908;</button>
+          </div>
+          <div class="interim-text" id="interim-ca_investigation_results"></div>
+        </div>
+        <div class="field"><label>Results Date</label>
+          <input type="date" name="ca_results_date"/></div>
+      </div>
+    </div>
+
+    <div class="ca-grid">
+      <div class="ca-box pending">
+        <div class="ca-box-title">Proposed Corrective Action</div>
+        <div class="field" style="margin-bottom:8px;"><label>Action Plan</label>
+          <div class="mic-ta-wrap">
+            <textarea name="ca_proposed_action" placeholder="What corrective action is proposed?"></textarea>
+            <button type="button" class="mic-btn-ta" onclick="startMicTa(this)">&#127908;</button>
+          </div>
+          <div class="interim-text" id="interim-ca_proposed_action"></div>
+        </div>
+        <div class="field"><label>Due Date</label>
+          <input type="date" name="ca_action_due"/></div>
+      </div>
+      <div class="ca-box complete">
+        <div class="ca-box-title">Resolution</div>
+        <div class="field" style="margin-bottom:8px;"><label>How was this resolved?</label>
+          <div class="mic-ta-wrap">
+            <textarea name="ca_resolution" placeholder="Describe the final resolution..."></textarea>
+            <button type="button" class="mic-btn-ta" onclick="startMicTa(this)">&#127908;</button>
+          </div>
+          <div class="interim-text" id="interim-ca_resolution"></div>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="ca-ongoing" name="ca_ongoing" value="yes"/>
+          <label for="ca-ongoing">Ongoing</label>
+        </div>
+        <div class="checkbox-row" style="margin-top:6px;">
+          <input type="checkbox" id="ca-complete" name="ca_complete" value="yes"/>
+          <label for="ca-complete">Complete</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ STEP 5: NOTES ══ -->
+  <div class="step-panel" id="step-5">
+    <div class="step-header">
+      <div class="step-title">General Notes</div>
+      <div class="step-sub">Timestamped case notes — all entries are logged with your name and time</div>
+    </div>
+    <div class="card">
+      <div class="notes-list" id="notes-list">
+        <div style="font-size:13px;color:var(--text-lt);font-style:italic;text-align:center;padding:16px 0;">No notes yet — add the first note below.</div>
+      </div>
+      <div class="note-add-area">
+        <div class="note-add-label">Add a Note</div>
+        <div class="mic-ta-wrap">
+          <textarea id="new-note-text" placeholder="Type or dictate your note here..."></textarea>
+          <button type="button" class="mic-btn-ta" onclick="startMicTaById('new-note-text')">&#127908;</button>
+        </div>
+        <div class="interim-text" id="interim-new-note-text"></div>
+        <button type="button" class="btn-add-note" onclick="addNote()">+ Add Note</button>
+      </div>
+    </div>
+    <input type="hidden" id="notes-json" name="notes_json" value="[]"/>
+
+    <div class="int-card" style="margin-top:0;">
+      <div class="int-card-label">&#128274; Internal Case Notes — Not Visible to Customer</div>
+      <div class="mic-ta-wrap">
+        <textarea name="agent_notes" placeholder="Internal notes, follow-up actions, escalation flags..."></textarea>
+        <button type="button" class="mic-btn-ta" onclick="startMicTa(this)">&#127908;</button>
+      </div>
+      <div class="interim-text" id="interim-agent_notes"></div>
+      <div class="int-hint">Internal use only — never shared externally</div>
+    </div>
+  </div>
+
+  <!-- ══ STEP 6: ATTACHMENTS ══ -->
+  <div class="step-panel" id="step-6">
+    <div class="step-header">
+      <div class="step-title">Attachments</div>
+      <div class="step-sub">Photos, documents, and supporting files</div>
+    </div>
+    <div class="card">
+      <div class="upload-zone" id="global-upload-zone"
+           ondragover="onDragOver(event,'global')" ondragleave="onDragLeave(event,'global')" ondrop="onDrop(event,'global')">
+        <input type="file" accept="image/*,.pdf,.doc,.docx,.txt,.xlsx,.csv,.zip" multiple onchange="onFileChange(event,'global')"/>
+        <div style="font-size:28px;margin-bottom:8px;">&#128206;</div>
+        <div class="up-text"><strong>Click to browse</strong> or drag &amp; drop files here</div>
+        <div class="up-sub">Photos (JPG, PNG), PDF, Word, Excel, ZIP &mdash; Max 25 MB each</div>
+      </div>
+      <div class="file-list" id="flist-global"></div>
+    </div>
+
+    <div id="status-msg"></div>
+
+    <div style="margin-top:20px;padding:14px 18px;background:var(--parchment);border-radius:8px;font-size:12px;color:var(--text-mid);line-height:1.7;">
+      <strong>Ready to save?</strong> Review all sections using the tabs above, then click <strong>Save Record</strong> to submit to SharePoint. All fields marked <span style="color:var(--rust)">*</span> are required.
+    </div>
+  </div>
+
+</div><!-- end .body -->
+
+<!-- WIZARD FOOTER -->
+<div class="wizard-footer">
+  <button type="button" class="btn-prev" id="btn-prev" onclick="wizardPrev()" disabled>Back</button>
+  <div class="step-indicator" id="step-indicator">Step 1 of 6</div>
+  <button type="button" class="btn-next" id="btn-next" onclick="wizardNext()">Next &rarr;</button>
+</div>
+
+<div class="footer">Graham Architectural Products &nbsp;&middot;&nbsp; Internal Quality Record &nbsp;&middot;&nbsp; Confidential</div>
+</form>
+
+<script>
+// ════════════════════════════════════════════════════════════════════
+// PRODUCT CATALOG — from your Access database
+// Format: { "Product Type": ["Model1", "Model2", ...] }
+// Edit via the Admin page or add directly here
+// ════════════════════════════════════════════════════════════════════
+var PRODUCT_CATALOG = {
+  "Double Hung":         ["3000","3100","3400","V3900","GF4000","GF8000"],
+  "Projected":           ["6600","6700","6800","GF6800","6900","V6900"],
+  "Fixed":               ["1000","1100","1200","1300","1400","1500","V1100"],
+  "Horizontal Slider":   ["0200","0300","0400","0500","0600","GF0300","V0400"],
+  "Sliding Glass Door":  ["0800","0900","GF0900","V0900"],
+  "Terrace Door":        ["7000","7100","7400"],
+  "Tilt and Turn":       ["7500"],
+  "Curtain Wall":        ["CW-Standard","CW-Thermally Broken","CW-Custom"],
+  "Storefront":          ["SF-Standard","SF-Thermally Broken"],
+  "Entrance Door":       ["ED-Standard","ED-Automatic","ED-Panic Hardware"]
+};
+
+var PRODUCT_KEY = 'gap_products';
+function getProducts(){ try{ var s=localStorage.getItem(PRODUCT_KEY); if(s) return JSON.parse(s); }catch(e){} return PRODUCT_CATALOG; }
+function saveProducts(p){ try{ localStorage.setItem(PRODUCT_KEY,JSON.stringify(p)); }catch(e){} }
+if(!localStorage.getItem(PRODUCT_KEY)) saveProducts(PRODUCT_CATALOG);
+
+// ════════════════════════════════════════════════════════════════════
+// CONFIGURABLE LISTS — Corrective Action dropdowns
+// ════════════════════════════════════════════════════════════════════
+var CA_ACTION_TYPES = [
+  "Replacement / Remake",
+  "Credit / Refund",
+  "Field Service Repair",
+  "Root Cause Investigation",
+  "No Action Required",
+  "Customer Satisfaction",
+  "Warranty Claim",
+  "Design Review"
+];
+
+var CA_RESPONSIBLE_PARTIES = [
+  "Customer Service",
+  "Field Service",
+  "Quality Assurance",
+  "Manufacturing",
+  "Manufacturing - York",
+  "Manufacturing - FMG",
+  "Production Engineering",
+  "Design Engineering",
+  "Shipping Dept",
+  "Credit",
+  "Carrier"
+];
+
+var LISTS_KEY = 'gap_ca_lists';
+function getCaLists(){ try{ var s=localStorage.getItem(LISTS_KEY); if(s) return JSON.parse(s); }catch(e){} return {actions:CA_ACTION_TYPES,parties:CA_RESPONSIBLE_PARTIES}; }
+function saveCaLists(l){ try{ localStorage.setItem(LISTS_KEY,JSON.stringify(l)); }catch(e){} }
+if(!localStorage.getItem(LISTS_KEY)) saveCaLists({actions:CA_ACTION_TYPES,parties:CA_RESPONSIBLE_PARTIES});
+
+// ════════════════════════════════════════════════════════════════════
+// TAXONOMY
+// ════════════════════════════════════════════════════════════════════
+var DEFAULT_TAXONOMY = {
+  "Assembly & Hardware": {
+    "Missing components": ["Missing fasteners -- screws, clips, anchors, rivets absent or not included","Missing lock/handle set -- lock, handle, keeper, or related components missing","Missing hinge -- hinge(s) missing from unit or kit","Missing gasket/weatherstrip -- weatherstrip/gasket absent from required location","Missing shims/packers -- setting blocks, packers, or shims missing","Missing screen -- screen absent from unit","Missing glazing bead -- bead absent from glazing pocket"],
+    "Wrong components": ["Wrong hardware type -- incorrect part family (wrong lock/hinge/handle model)","Wrong handed hardware -- left/right hand orientation incorrect","Wrong fastener type -- wrong length/diameter/head type/material of fastener","Wrong hardware finish -- finish/color does not match frame finish","Wrong gasket profile -- incorrect gasket profile or durometer supplied"],
+    "Installation/assembly quality": ["Loose hardware -- fasteners not tightened to spec; hardware moves","Cross-threaded fastener -- thread damage or incorrect engagement","Misaligned hardware -- hole pattern/positioning causes bind or interference","Stripped fastener/insert -- fastener spins, cannot torque; insert stripped","Over-torqued fastener -- damage from excess torque","Hardware installed upside down or backwards"],
+    "Functional hardware issue": ["Lock does not latch -- latch/keeper alignment or assembly issue prevents latching","Handle/hinge binds -- operation stiff/binds due to misassembly or interference","Lock/handle failure -- hardware broken, missing function, or incorrect assembly","Panic hardware malfunction -- panic device does not operate correctly","Door closer malfunction -- closer does not control speed or close fully","Sash falls open -- no hold-open or stay arm present"]
+  },
+  "Glass & Glazing": {
+    "Glass damage": ["Scratched glass -- visible scratch/scuff on glass surface","Broken/cracked glass -- crack, chip, or shatter present on arrival or in-field","Edge chip -- chip at glass edge, often from handling or setting","Stress crack -- crack from thermal or installation stress","Impact crack -- crack from point impact","Shattered pane -- full breakage"],
+    "Optical quality": ["Distortion -- roller wave visible in glass","Anisotropy/quench marks -- iridescent stress marks in tempered glass","Haze or milky appearance -- coating or glass haze","Bubbles or seeds -- inclusions in glass body","Insufficient clarity -- visible optical defect affecting view"],
+    "IGU issues": ["Fogging/condensation -- moisture between panes indicating IG seal failure","Seal failure (IGU) -- IGU perimeter seal compromised; may include argon loss","Desiccant failure -- desiccant saturated; fogging result","Broken spacer bar -- spacer damaged or separated","Low-E coating damage -- coating visibly damaged or delaminated","Wrong spacer/grid -- incorrect spacer color/size or grid pattern"],
+    "Glazing assembly": ["Wrong glass type -- incorrect thickness/tint/lamination/tempered vs annealed","Setting block missing/misplaced -- blocks missing, wrong durometer, or misplaced","Glazing bead damaged/missing -- bead cracked, missing, or not fully seated","Sealant void/skip -- sealant missing/voids around glass or glazing pocket","Glass not fully seated in pocket -- glass high or tilted in frame","Glass installed wrong orientation -- Low-E surface on wrong face"]
+  },
+  "Surface Finish": {
+    "Cosmetic damage": ["Scratched finish -- linear scratch through coating/anodize","Chip/peel -- coating chip, peel, or flake","Dent/ding -- substrate deformation visible through finish","Protective film adhesive residue -- film adhesive left on finish"],
+    "Appearance & texture": ["Orange peel -- uneven texture in coating; excessive orange peel","Runs/sags -- coating run or sag marks","Fisheyes/craters -- contamination causing fisheyes/craters","Dust/debris in finish -- particles trapped in coating","Pinholes in paint film -- small holes through coating layer"],
+    "Color": ["Color mismatch vs standard -- color deviates from approved standard or lot","Shade variation within unit -- mismatch between components on same unit","Color variation -- batch-to-batch -- color shifts between production runs","Wrong color/finish supplied -- finish on unit does not match PO/order"],
+    "Anodize-specific": ["Anodize streaking/banding -- visible streaks/bands in anodized surface","Anodize pitting -- pits/porosity visible in anodized finish","Anodize too light -- anodize thinner/lighter than spec","Anodize too dark -- anodize heavier/darker than spec"],
+    "Adhesion": ["Poor adhesion/peeling -- coating adhesion failure (tape test fail/peel)","Clear coat crazing or cracking -- top coat failure pattern","Thermal break debonding -- thermal break separating from frame"]
+  },
+  "Dimensional / Fit-Up": {
+    "Wrong part/size": ["Wrong part shipped -- incorrect part number shipped vs order","Wrong size (overall) -- incorrect overall size; does not fit opening/spec","Wrong cut length -- extrusion/part cut to wrong length","Wrong profile/extrusion used -- incorrect extrusion series or shape"],
+    "Tolerance": ["Out of tolerance dimension -- measured dimension exceeds tolerance","Hole location out of tolerance -- hole/slot position outside tolerance","Glass pocket width or depth incorrect -- pocket does not meet bite spec","Wall thickness out of tolerance -- frame wall below minimum"],
+    "Squareness & straightness": ["Not square -- frame/assembly not square","Warp/bow -- component warped/bowed beyond spec","Twist in frame member -- torsional distortion in extrusion"],
+    "Fit": ["Interference/binding fit -- parts interfere; tight fit causes assembly/operation issues","Excessive gaps -- gaps exceed spec; may cause leaks or aesthetics issues","Mismatch between mating parts -- mating components do not align or match profiles","Corner joint gap -- corner condition has visible gap"]
+  },
+  "Sealant / Weatherproofing": {
+    "Sealant application": ["Missing sealant -- sealant absent where required","Insufficient sealant/bead too small -- bead size inadequate; poor coverage","Sealant voids/skips -- discontinuous bead; gaps/voids present","Messy/over-applied sealant -- excess squeeze-out; poor aesthetics","Sealant wrong color -- sealant color does not match frame or spec"],
+    "Sealant cure & adhesion": ["Sealant not cured/tacky -- cure incomplete at shipment/installation","Adhesion failure -- sealant separates from substrate; poor prep/compatibility","Sealant cohesion failure -- sealant tears internally"],
+    "Weatherstrip & gasket": ["Wrong gasket installed -- incorrect profile/durometer/length","Gasket damaged/torn -- tear, pinch, or stretch in gasket","Gasket not fully seated -- gasket popped out of groove","Gasket shrinkage -- gasket pulled away from corners"],
+    "Leakage symptom": ["Water leak reported -- customer reports water intrusion (needs root cause)","Air leak/draft reported -- customer reports air infiltration/draft","Water at sill -- water entering at interior sill condition","Water at head -- water entering at head of frame","Water at jamb -- water entering at jamb condition"]
+  },
+  "Thermal Performance": {
+    "Condensation": ["Condensation on interior face of glass -- glass surface condensation","Condensation on frame -- interior -- frame surface condensation","Condensation on thermal break -- cold bridge through break","Excessive condensation -- exceeds spec or reasonable expectation"],
+    "Thermal bridging": ["Thermal break missing -- break not present in frame assembly","Thermal break damaged -- break material cracked or deformed","Thermal break incorrect specification -- wrong material or width"],
+    "Solar & thermal comfort": ["Excessive solar heat gain -- room overheating; SHGC complaint","Incorrect glass spec -- SHGC -- solar heat gain coefficient wrong","Incorrect glass spec -- VLT -- visible light transmission wrong","Glare complaint -- excessive glare from glass orientation or coating"]
+  },
+  "Functional / Performance": {
+    "Operation": ["Will not open -- unit will not open; obstruction/binding","Will not close -- unit will not close or align to latch","Hard to operate -- high force required; friction/binding","Sash misaligned in frame -- sash not parallel or plumb in frame","Door binding at top or bottom -- door edge contacts frame"],
+    "Sealing performance": ["Water leakage -- water intrusion under normal conditions","Air leakage -- draft/air infiltration beyond expectations","Exceeds air infiltration spec -- tested or measured air leakage over limit"],
+    "Noise & vibration": ["Rattle/noise -- rattle/noise during operation or wind load","Whistling or wind noise -- acoustic issue at perimeter or sash","Glass rattle in frame -- glass not fully secured in pocket"]
+  },
+  "Packaging / Shipping": {
+    "Packaging condition": ["Crushed/damaged carton -- packaging compromised; potential transit damage","Insufficient protection -- inadequate padding/blocks leading to damage"],
+    "Shipping damage": ["Transit damage -- frame -- frame damaged during shipping/handling","Transit damage -- glass -- glass damage during shipping/handling","Transit damage -- finish -- finish damaged during transit","Water damage in transit -- moisture ingress during shipping"],
+    "Labeling": ["Incorrect label on unit -- wrong label (part/customer/job) applied","Missing label/traceability -- label missing; traceability compromised"],
+    "Kitting": ["Mixed parts/incorrect kit contents -- kit contains wrong/mixed components","Short shipped -- units missing -- fewer units received than ordered","Missing hardware pack in carton -- hardware pack absent from packaging"]
+  },
+  "Documentation / Order Accuracy": {
+    "Order entry & configuration": ["Wrong configuration built -- options/configuration does not match order","Wrong handing in order -- order handing misinterpreted or entered wrong","Wrong color/finish specified -- finish on unit does not match PO/order","Wrong glass specified -- glass type does not match order","Wrong operation type -- fixed vs operable or swing direction incorrect"],
+    "Documentation": ["Missing drawings/specs -- required drawings/specs not provided","Incorrect paperwork -- paperwork errors (dimensions, part number, revision)"],
+    "Customer communication": ["Change not captured -- customer change request not implemented","Lead time/delivery miscommunication -- delivery date commitment issue"]
+  },
+  "Structural / Safety": {
+    "Structural failure": ["Frame deflection -- exceeds L/175 or spec limit","Frame failure under wind load -- structural failure in service","Anchor failure -- anchor pulled out or yielded","Glass fallout -- glass separated from frame in service"],
+    "Safety glazing": ["Non-safety glass in required location -- annealed where tempered/laminated required","Safety glass not tempered to spec -- temper level insufficient","Missing CPSC/ANSI safety label -- required marking absent"],
+    "Code compliance": ["Unit does not meet egress requirements -- clear opening size deficient","Unit does not meet fire rating -- fire assembly requirement not met","Incorrect impact rating for hurricane zone -- impact spec wrong for location"]
+  }
+};
+
+var TAX_KEY = 'gap_taxonomy';
+var TAX_VERSION = 'v3';
+var TAX_VER_KEY = 'gap_taxonomy_version';
+function getTaxonomy(){ try{ var s=localStorage.getItem(TAX_KEY); if(s) return JSON.parse(s); }catch(e){} return JSON.parse(JSON.stringify(DEFAULT_TAXONOMY)); }
+function saveTaxonomy(t){ try{ localStorage.setItem(TAX_KEY,JSON.stringify(t)); }catch(e){} }
+if(localStorage.getItem(TAX_VER_KEY)!==TAX_VERSION){ saveTaxonomy(DEFAULT_TAXONOMY); try{localStorage.setItem(TAX_VER_KEY,TAX_VERSION);}catch(e){} }
+
+// ════════════════════════════════════════════════════════════════════
+// CASE ID & INIT
+// ════════════════════════════════════════════════════════════════════
+function genCaseID(){
+  var n=new Date(),y=n.getFullYear(),m=String(n.getMonth()+1).padStart(2,'0'),d=String(n.getDate()).padStart(2,'0');
+  return 'GAP-'+y+m+d+'-'+Math.floor(1000+Math.random()*9000);
+}
+var CASE_ID=genCaseID();
+document.getElementById('case-id-display').textContent=CASE_ID;
+document.getElementById('case-id-strip').textContent=CASE_ID;
+document.getElementById('hid-case').value=CASE_ID;
+document.getElementById('case-date-display').textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+var dtInput=document.querySelector('[name="call_datetime"]');
+if(dtInput){var now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());dtInput.value=now.toISOString().slice(0,16);}
+
+// ── Priority ──
+function setPriority(btn){
+  document.querySelectorAll('.p-btn').forEach(function(b){b.className='p-btn';});
+  btn.classList.add('active-'+btn.dataset.val.toLowerCase());
+  document.getElementById('priority-val').value=btn.dataset.val;
+}
+
+// ── Populate product dropdowns ──
+function populateProducts(){
+  var products=getProducts();
+  var typeSel=document.getElementById('product-type-sel');
+  Object.keys(products).forEach(function(t){
+    var o=document.createElement('option');o.value=t;o.textContent=t;typeSel.appendChild(o);
+  });
+}
+function updateModels(){
+  var products=getProducts();
+  var typeSel=document.getElementById('product-type-sel');
+  var modelSel=document.getElementById('product-model-sel');
+  var type=typeSel.value;
+  modelSel.innerHTML='<option value="">-- Select Model --</option>';
+  if(type&&products[type]){
+    products[type].forEach(function(m){var o=document.createElement('option');o.value=m;o.textContent=m;modelSel.appendChild(o);});
+    modelSel.disabled=false;
+  } else {
+    modelSel.disabled=true;
+  }
+}
+populateProducts();
+
+// ── Populate CA dropdowns ──
+function populateCaLists(){
+  var lists=getCaLists();
+  var actionSel=document.getElementById('ca-action-type');
+  var partySel=document.getElementById('ca-responsible-party');
+  lists.actions.forEach(function(a){var o=document.createElement('option');o.value=a;o.textContent=a;actionSel.appendChild(o);});
+  lists.parties.forEach(function(p){var o=document.createElement('option');o.value=p;o.textContent=p;partySel.appendChild(o);});
+}
+populateCaLists();
+
+// ════════════════════════════════════════════════════════════════════
+// WIZARD
+// ════════════════════════════════════════════════════════════════════
+var STEPS=[
+  {id:'step-1',label:'Header',icon:'1'},
+  {id:'step-2',label:'Project',icon:'2'},
+  {id:'step-3',label:'Issues',icon:'3'},
+  {id:'step-4',label:'Corrective Action',icon:'4'},
+  {id:'step-5',label:'Notes',icon:'5'},
+  {id:'step-6',label:'Attachments',icon:'6'}
+];
+var currentStep=1;
+
+function buildWizardNav(){
+  var nav=document.getElementById('wizard-nav');
+  nav.innerHTML='';
+  STEPS.forEach(function(s,i){
+    var tab=document.createElement('div');
+    var cls='wz-tab';
+    if(i+1===currentStep) cls+=' active';
+    else if(i+1<currentStep) cls+=' done';
+    tab.className=cls;
+    tab.innerHTML='<div class="wz-num">'+(i+1<currentStep?'&#10003;':(i+1))+'</div><span class="wz-label">'+s.label+'</span>';
+    (function(step){tab.addEventListener('click',function(){if(step<=currentStep) goToStep(step);});})(i+1);
+    nav.appendChild(tab);
+  });
+}
+
+function goToStep(n){
+  document.getElementById('step-'+currentStep).classList.remove('active');
+  currentStep=n;
+  document.getElementById('step-'+currentStep).classList.add('active');
+  document.getElementById('btn-prev').disabled=(currentStep===1);
+  document.getElementById('btn-next').textContent=(currentStep===STEPS.length)?'Save Record':'Next \u2192';
+  document.getElementById('step-indicator').textContent='Step '+currentStep+' of '+STEPS.length;
+  buildWizardNav();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function wizardNext(){
+  if(currentStep===STEPS.length){ submitForm(); return; }
+  goToStep(currentStep+1);
+}
+function wizardPrev(){ if(currentStep>1) goToStep(currentStep-1); }
+
+buildWizardNav();
+
+// ════════════════════════════════════════════════════════════════════
+// SPEECH RECOGNITION
+// ════════════════════════════════════════════════════════════════════
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+var activeBtn=null;
+if(!SR) document.getElementById('no-speech-banner').style.display='block';
+
+function showToast(t){document.getElementById('toast-label').textContent=t;document.getElementById('speech-toast').classList.add('show');}
+function hideToast(){document.getElementById('speech-toast').classList.remove('show');}
+function stopActive(){if(activeBtn){activeBtn.classList.remove('recording');activeBtn=null;}hideToast();}
+function capitalize(s){return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
+
+function dictate(btn,getVal,setVal,isTa){
+  if(!SR){alert('Please use Chrome or Edge for voice dictation.');return;}
+  if(activeBtn===btn){stopActive();return;}
+  stopActive();
+  activeBtn=btn; btn.classList.add('recording');
+  showToast('Listening... speak now');
+  var rec=new SR();
+  rec.continuous=false; rec.interimResults=false; rec.lang='en-US'; rec.maxAlternatives=1;
+  rec.onresult=function(e){
+    var t=e.results[0][0].transcript.trim();
+    if(!t){stopActive();return;}
+    var cur=getVal();
+    var joined;
+    if(isTa){
+      if(cur&&!/[.!?,]$/.test(cur.trimEnd())) joined=cur.trimEnd()+'. '+capitalize(t);
+      else if(cur) joined=cur+' '+capitalize(t);
+      else joined=capitalize(t);
+    } else {
+      joined=cur?(cur+' '+capitalize(t)):capitalize(t);
+    }
+    setVal(joined);
+    showToast('Got it -- tap mic again for more');
+    setTimeout(hideToast,2000);
+    btn.classList.remove('recording'); activeBtn=null;
+  };
+  rec.onerror=function(e){
+    if(e.error==='no-speech') showToast('No speech detected -- try again');
+    else if(e.error==='not-allowed') showToast('Mic blocked -- check browser permissions');
+    else showToast('Error: '+e.error);
+    setTimeout(hideToast,3000); stopActive();
+  };
+  rec.onend=function(){if(activeBtn===btn) stopActive();};
+  try{rec.start();}catch(err){showToast('Could not start mic: '+err.message);stopActive();}
+}
+
+function startMic(btn){
+  var input=btn.closest('.mic-input-row').querySelector('input');
+  dictate(btn,function(){return input.value;},function(v){input.value=v;},false);
+}
+function startMicTa(btn){
+  var ta=btn.closest('.mic-ta-wrap').querySelector('textarea');
+  var interimEl=document.getElementById('interim-'+ta.name);
+  dictate(btn,function(){return ta.value;},function(v){ta.value=v;if(interimEl)interimEl.textContent='';ta.scrollTop=ta.scrollHeight;},true);
+}
+function startMicTaById(id){
+  var ta=document.getElementById(id);
+  var btn=ta.closest('.mic-ta-wrap').querySelector('.mic-btn-ta');
+  var interimEl=document.getElementById('interim-'+id);
+  dictate(btn,function(){return ta.value;},function(v){ta.value=v;if(interimEl)interimEl.textContent='';ta.scrollTop=ta.scrollHeight;},true);
+}
+function startMicSelect(btn,sel,msgId){
+  if(!SR) return;
+  if(activeBtn===btn){stopActive();return;}
+  stopActive();
+  activeBtn=btn; btn.classList.add('recording');
+  showToast('Say an option...');
+  var msgEl=document.getElementById(msgId);
+  var options=Array.from(sel.options).map(function(o){return o.value;}).filter(function(v){return v;});
+  var rec=new SR(); rec.continuous=false; rec.interimResults=false; rec.lang='en-US';
+  rec.onresult=function(e){
+    var spoken=e.results[0][0].transcript.trim().toLowerCase();
+    var best=null,bestScore=-1;
+    for(var i=0;i<options.length;i++){var s=fuzzyScore(spoken,options[i].toLowerCase());if(s>bestScore){bestScore=s;best=options[i];}}
+    if(best&&bestScore>0){sel.value=best;sel.dispatchEvent(new Event('change'));if(msgEl){msgEl.textContent='Matched: "'+best+'"';msgEl.className='voice-match-msg ok';}}
+    else if(msgEl){msgEl.textContent='No match for "'+spoken+'" -- select manually';msgEl.className='voice-match-msg err';}
+    stopActive();
+  };
+  rec.onerror=function(e){if(msgEl){msgEl.textContent='Mic error: '+e.error;msgEl.className='voice-match-msg err';}stopActive();};
+  rec.onend=function(){if(activeBtn===btn)stopActive();};
+  try{rec.start();}catch(err){stopActive();}
+}
+function fuzzyScore(a,b){
+  var wa=a.split(/\s+/),wb=b.split(/\s+/);
+  return wa.filter(function(w){return wb.some(function(x){return x.indexOf(w)>=0||w.indexOf(x)>=0;});}).length;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// TAXONOMY MODAL
+// ════════════════════════════════════════════════════════════════════
+var modal={issueN:null,step:1,l1:{existing:null,isNew:false,newVal:''},l2:{existing:null,isNew:false,newVal:''},l3:{existing:null,isNew:false,newVal:''}};
+
+function openModal(n){
+  modal.issueN=n; modal.step=1;
+  modal.l1={existing:null,isNew:false,newVal:''};
+  modal.l2={existing:null,isNew:false,newVal:''};
+  modal.l3={existing:null,isNew:false,newVal:''};
+  renderModal();
+  document.getElementById('modal-overlay').style.display='block';
+  document.getElementById('guided-modal').classList.add('open');
+}
+function closeModal(){
+  document.getElementById('modal-overlay').style.display='none';
+  document.getElementById('guided-modal').classList.remove('open');
+}
+function renderModal(){
+  var tax=getTaxonomy();
+  var LEVELS=['L1 -- Defect Family','L2 -- Defect Type','L3 -- Defect Detail'];
+  var NAMES=['defect family','defect type','defect detail'];
+  var track=document.getElementById('modal-step-track');
+  track.innerHTML='';
+  for(var i=1;i<=3;i++){
+    if(i>1){var line=document.createElement('div');line.className='modal-step-line';track.appendChild(line);}
+    var dot=document.createElement('div');
+    dot.className='modal-step-dot'+(i<modal.step?' done':i===modal.step?' active':'');
+    dot.textContent=i; track.appendChild(dot);
+  }
+  document.getElementById('modal-head-title').textContent=LEVELS[modal.step-1];
+  document.getElementById('modal-progress').textContent='Step '+modal.step+' of 3';
+  document.getElementById('modal-back-btn').disabled=(modal.step===1);
+  document.getElementById('modal-next-btn').textContent=(modal.step===3)?'Save Classification':'Next';
+  var options=[],levelState;
+  var body=document.getElementById('modal-body');
+  body.innerHTML='';
+  if(modal.step===1){options=Object.keys(tax);levelState=modal.l1;document.getElementById('modal-head-sub').textContent='Start with the top-level defect category.';}
+  else if(modal.step===2){var l1v=modal.l1.isNew?modal.l1.newVal:modal.l1.existing;options=modal.l1.isNew?[]:Object.keys(tax[l1v]||{});levelState=modal.l2;document.getElementById('modal-head-sub').textContent='Narrow to the specific type of defect.';}
+  else{var l1v2=modal.l1.isNew?modal.l1.newVal:modal.l1.existing;var l2v=modal.l2.isNew?modal.l2.newVal:modal.l2.existing;options=(modal.l1.isNew||modal.l2.isNew)?[]:(tax[l1v2]&&tax[l1v2][l2v]?tax[l1v2][l2v]:[]);levelState=modal.l3;document.getElementById('modal-head-sub').textContent='Specify the exact defect detail.';}
+  var sub=document.createElement('div');sub.className='modal-subtitle';
+  sub.textContent=options.length>0?'Select the best match, or add new only if nothing fits.':'No existing entries -- add a new one below.';
+  body.appendChild(sub);
+  if(options.length>0){
+    var grid=document.createElement('div');grid.className='tax-options-grid';
+    options.forEach(function(opt){
+      var pill=document.createElement('div');pill.className='tax-pill'+(levelState.existing===opt&&!levelState.isNew?' selected':'');
+      pill.textContent=opt;
+      pill.addEventListener('click',function(){levelState.existing=opt;levelState.isNew=false;levelState.newVal='';renderModal();});
+      grid.appendChild(pill);
+    });
+    body.appendChild(grid);
+    var div=document.createElement('div');div.className='modal-or-divider';div.textContent='-- or --';body.appendChild(div);
+  }
+  var addPill=document.createElement('div');addPill.className='tax-pill add-new-pill'+(levelState.isNew?' selected':'');
+  addPill.textContent='+ None of these apply -- add new '+NAMES[modal.step-1];
+  addPill.addEventListener('click',function(){levelState.isNew=true;levelState.existing=null;renderModal();});
+  body.appendChild(addPill);
+  if(levelState.isNew){
+    var wrap=document.createElement('div');wrap.className='new-entry-wrap';
+    var lbl=document.createElement('label');lbl.textContent='New '+NAMES[modal.step-1]+' name';wrap.appendChild(lbl);
+    var row=document.createElement('div');row.className='mic-input-row';
+    var inp=document.createElement('input');inp.type='text';inp.value=levelState.newVal;inp.placeholder='Enter a clear, descriptive name...';
+    inp.addEventListener('input',function(e){levelState.newVal=e.target.value;});
+    row.appendChild(inp);
+    if(SR){var mb=document.createElement('button');mb.type='button';mb.className='mic-btn';mb.title='Dictate';mb.textContent='M';mb.addEventListener('click',function(){startMic(mb);});row.appendChild(mb);}
+    wrap.appendChild(row);
+    var hint=document.createElement('div');hint.className='new-entry-hint';hint.textContent='New entry will be added to the taxonomy immediately and available to all agents on this device.';wrap.appendChild(hint);
+    body.appendChild(wrap);
+    setTimeout(function(){inp.focus();},50);
+  }
+  var errEl=document.createElement('div');errEl.className='modal-error';errEl.id='modal-error';body.appendChild(errEl);
+}
+function showModalError(msg){var el=document.getElementById('modal-error');if(el){el.textContent=msg;el.classList.add('show');}}
+function clearModalError(){var el=document.getElementById('modal-error');if(el)el.classList.remove('show');}
+function modalBack(){if(modal.step>1){modal.step--;renderModal();}}
+function modalNext(){
+  clearModalError();
+  var ls=[modal.l1,modal.l2,modal.l3][modal.step-1];
+  if(!ls.existing&&!ls.isNew){showModalError('Please select an option or choose to add a new one.');return;}
+  if(ls.isNew&&!ls.newVal.trim()){showModalError('Please enter a name for the new entry.');return;}
+  if(modal.step<3){modal.step++;renderModal();}
+  else{confirmModal();}
+}
+function confirmModal(){
+  var tax=getTaxonomy();
+  var l1v=(modal.l1.isNew?modal.l1.newVal:modal.l1.existing).trim();
+  var l2v=(modal.l2.isNew?modal.l2.newVal:modal.l2.existing).trim();
+  var l3v=(modal.l3.isNew?modal.l3.newVal:modal.l3.existing).trim();
+  if(!tax[l1v]) tax[l1v]={};
+  if(!tax[l1v][l2v]) tax[l1v][l2v]=[];
+  if(tax[l1v][l2v].indexOf(l3v)<0) tax[l1v][l2v].push(l3v);
+  saveTaxonomy(tax);
+  var n=modal.issueN;
+  var card=document.querySelector('.issue-card[data-n="'+n+'"]');
+  if(card){
+    rewireL1(card,n);
+    var l1s=card.querySelector('[name="issue_'+n+'_l1"]');
+    var l2s=card.querySelector('[name="issue_'+n+'_l2"]');
+    var l3s=card.querySelector('[name="issue_'+n+'_l3"]');
+    l1s.value=l1v; l1s.dispatchEvent(new Event('change'));
+    setTimeout(function(){l2s.value=l2v;l2s.dispatchEvent(new Event('change'));setTimeout(function(){l3s.value=l3v;},80);},80);
+  }
+  closeModal();
+}
+
+// ════════════════════════════════════════════════════════════════════
+// ISSUE CARDS
+// ════════════════════════════════════════════════════════════════════
+function fillSelect(sel,opts,placeholder){
+  sel.innerHTML='<option value="">'+placeholder+'</option>';
+  opts.forEach(function(o){var e=document.createElement('option');e.value=o;e.textContent=o;sel.appendChild(e);});
+  sel.disabled=opts.length===0;
+}
+
+function wireL1(card,n){
+  var tax=getTaxonomy();
+  var l1=card.querySelector('[name="issue_'+n+'_l1"]');
+  var l2=card.querySelector('[name="issue_'+n+'_l2"]');
+  var l3=card.querySelector('[name="issue_'+n+'_l3"]');
+  l1.addEventListener('change',function(){
+    var l2opts=(l1.value&&tax[l1.value])?Object.keys(tax[l1.value]):[];
+    fillSelect(l2,l2opts,'-- Select Type --');
+    fillSelect(l3,[],'-- Select Detail --');
+    l2.disabled=!l1.value; l3.disabled=true;
+  });
+  l2.addEventListener('change',function(){
+    var l3opts=[];
+    if(l2.value&&l1.value&&tax[l1.value]&&tax[l1.value][l2.value]) l3opts=tax[l1.value][l2.value];
+    fillSelect(l3,l3opts,'-- Select Detail --');
+    l3.disabled=!l2.value;
+  });
+  fillSelect(l1,Object.keys(tax),'-- Select Family --');
+  l2.disabled=true; l3.disabled=true;
+}
+
+function rewireL1(card,n){
+  var l1=card.querySelector('[name="issue_'+n+'_l1"]');
+  var l2=card.querySelector('[name="issue_'+n+'_l2"]');
+  var l3=card.querySelector('[name="issue_'+n+'_l3"]');
+  var l1c=l1.cloneNode(true);l1.parentNode.replaceChild(l1c,l1);
+  var l2c=l2.cloneNode(true);l2.parentNode.replaceChild(l2c,l2);
+  var l3c=l3.cloneNode(true);l3.parentNode.replaceChild(l3c,l3);
+  wireL1(card,n);
+}
+
+function buildIssueCard(n){
+  var card=document.createElement('div');
+  card.className='issue-card'; card.dataset.n=n;
+  card.innerHTML=
+    '<div class="issue-card-head">'+
+      '<div class="issue-num-badge">'+n+'</div>'+
+      '<div class="issue-card-label">Issue '+n+'</div>'+
+    '</div>'+
+    '<div class="taxonomy-block">'+
+      '<div class="tax-header">'+
+        '<div class="tax-header-text">Quality Taxonomy Classification</div>'+
+        '<div class="tax-tag">Standardized</div>'+
+        '<button type="button" class="btn-add-tax" onclick="openModal('+n+')">+ Can\'t find a match?</button>'+
+      '</div>'+
+      '<div class="tax-row">'+
+        '<div class="tax-field"><label><span class="tax-level-badge">L1</span>Family<span class="req">*</span></label>'+
+          '<div class="tax-select-row"><select name="issue_'+n+'_l1" required></select>'+
+          '<button type="button" class="mic-btn-static" onclick="startMicSelect(this,this.closest(\'.tax-select-row\').querySelector(\'select\'),\'vm-'+n+'-l1\')" title="Dictate">&#127908;</button></div>'+
+          '<div class="voice-match-msg" id="vm-'+n+'-l1"></div></div>'+
+        '<div class="tax-field"><label><span class="tax-level-badge">L2</span>Type<span class="req">*</span></label>'+
+          '<div class="tax-select-row"><select name="issue_'+n+'_l2" required disabled></select>'+
+          '<button type="button" class="mic-btn-static" onclick="startMicSelect(this,this.closest(\'.tax-select-row\').querySelector(\'select\'),\'vm-'+n+'-l2\')" title="Dictate">&#127908;</button></div>'+
+          '<div class="voice-match-msg" id="vm-'+n+'-l2"></div></div>'+
+        '<div class="tax-field"><label><span class="tax-level-badge">L3</span>Detail<span class="req">*</span></label>'+
+          '<div class="tax-select-row"><select name="issue_'+n+'_l3" required disabled></select>'+
+          '<button type="button" class="mic-btn-static" onclick="startMicSelect(this,this.closest(\'.tax-select-row\').querySelector(\'select\'),\'vm-'+n+'-l3\')" title="Dictate">&#127908;</button></div>'+
+          '<div class="voice-match-msg" id="vm-'+n+'-l3"></div></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="fg" style="margin-bottom:12px;">'+
+      '<div class="field"><label>Location on Building<span class="opt">(optional)</span></label>'+
+        '<div class="mic-input-row"><input type="text" name="issue_'+n+'_location" placeholder="e.g. West facade, Level 4"/>'+
+        '<button type="button" class="mic-btn" onclick="startMic(this)">&#127908;</button></div></div>'+
+      '<div class="field"><label>Unit / Frame ID<span class="opt">(optional)</span></label>'+
+        '<div class="mic-input-row"><input type="text" name="issue_'+n+'_unit" placeholder="e.g. W-04, FR-12"/>'+
+        '<button type="button" class="mic-btn" onclick="startMic(this)">&#127908;</button></div></div>'+
+    '</div>'+
+    '<div class="fg1" style="margin-bottom:12px;">'+
+      '<div class="field"><label>Description<span class="req">*</span></label>'+
+        '<div class="mic-ta-wrap"><textarea name="issue_'+n+'_desc" placeholder="Describe what the customer reported..." required></textarea>'+
+        '<button type="button" class="mic-btn-ta" onclick="startMicTa(this)">&#127908;</button></div>'+
+        '<div class="interim-text" id="interim-issue_'+n+'_desc"></div></div>'+
+    '</div>'+
+    '<div class="int-card">'+
+      '<div class="int-card-label">&#128274; Issue-Level Internal Note<span style="opacity:.6;font-size:9px;font-weight:400;letter-spacing:.06em;text-transform:none;margin-left:5px;">Internal only</span></div>'+
+      '<div class="mic-ta-wrap"><textarea name="issue_'+n+'_internal" placeholder="Internal notes, warranty status, root cause..."></textarea>'+
+      '<button type="button" class="mic-btn-ta" onclick="startMicTa(this)">&#127908;</button></div>'+
+    '</div>';
+  wireL1(card,n);
+  return card;
+}
+
+function renderIssues(count){
+  var wrap=document.getElementById('issues-wrap');
+  var cur=wrap.querySelectorAll('.issue-card').length;
+  if(count>cur){for(var i=cur+1;i<=count;i++) wrap.appendChild(buildIssueCard(i));}
+  else{var cards=wrap.querySelectorAll('.issue-card');for(var i=cards.length;i>count;i--){cards[i-1].remove();}}
+}
+document.getElementById('issue-count').addEventListener('change',function(e){renderIssues(parseInt(e.target.value));});
+renderIssues(1);
+
+// ════════════════════════════════════════════════════════════════════
+// NOTES
+// ════════════════════════════════════════════════════════════════════
+var notesData=[];
+
+function addNote(){
+  var ta=document.getElementById('new-note-text');
+  var text=ta.value.trim();
+  if(!text){ta.focus();return;}
+  var agentName=document.querySelector('[name="agent_name"]').value||'Agent';
+  var entry={text:text,author:agentName,time:new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})};
+  notesData.push(entry);
+  ta.value='';
+  renderNotes();
+  document.getElementById('notes-json').value=JSON.stringify(notesData);
+}
+
+function renderNotes(){
+  var list=document.getElementById('notes-list');
+  if(!notesData.length){
+    list.innerHTML='<div style="font-size:13px;color:var(--text-lt);font-style:italic;text-align:center;padding:16px 0;">No notes yet -- add the first note below.</div>';
+    return;
+  }
+  list.innerHTML='';
+  notesData.forEach(function(n){
+    var el=document.createElement('div');el.className='note-entry';
+    el.innerHTML='<div class="note-meta"><span class="note-author">'+n.author+'</span><span class="note-time">'+n.time+'</span></div><div class="note-text">'+n.text+'</div>';
+    list.appendChild(el);
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════
+// FILE ATTACHMENTS
+// ════════════════════════════════════════════════════════════════════
+var fileStore={global:[]};
+function onFileChange(e,n){addFiles(n,Array.from(e.target.files));e.target.value='';}
+function onDragOver(e,n){e.preventDefault();document.getElementById(n==='global'?'global-upload-zone':'zone-'+n).classList.add('over');}
+function onDragLeave(e,n){document.getElementById(n==='global'?'global-upload-zone':'zone-'+n).classList.remove('over');}
+function onDrop(e,n){e.preventDefault();document.getElementById(n==='global'?'global-upload-zone':'zone-'+n).classList.remove('over');addFiles(n,Array.from(e.dataTransfer.files));}
+function addFiles(n,files){if(!fileStore[n])fileStore[n]=[];fileStore[n].push.apply(fileStore[n],files);renderFiles(n);}
+function removeFile(n,i){fileStore[n].splice(i,1);renderFiles(n);}
+function fileIcon(name){var ext=name.split('.').pop().toLowerCase();if(['jpg','jpeg','png','gif','webp'].indexOf(ext)>=0)return'&#128444;';if(ext==='pdf')return'&#128196;';if(['doc','docx'].indexOf(ext)>=0)return'&#128196;';if(['xls','xlsx','csv'].indexOf(ext)>=0)return'&#128202;';return'&#128206;';}
+function renderFiles(n){
+  var list=document.getElementById(n==='global'?'flist-global':'flist-'+n);
+  list.innerHTML='';
+  (fileStore[n]||[]).forEach(function(f,i){
+    var el=document.createElement('div');el.className='file-chip';
+    el.innerHTML='<span>'+fileIcon(f.name)+'</span><span class="fc-name">'+f.name+'</span><span class="fc-size">'+Math.round(f.size/1024)+' KB</span><button type="button" class="fc-rm" onclick="removeFile(\''+n+'\','+i+')">x</button>';
+    list.appendChild(el);
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════
+// SUBMIT
+// ════════════════════════════════════════════════════════════════════
+var ENDPOINT='YOUR_POWER_AUTOMATE_URL_HERE';
+
+function submitForm(){
+  stopActive();
+  var msg=document.getElementById('status-msg');
+  var btn=document.getElementById('btn-next');
+  msg.className=''; msg.style.display='none';
+
+  // Validate required fields
+  var ok=true;
+  document.querySelectorAll('[required]').forEach(function(el){
+    if(!el.value.trim()){el.style.borderColor='var(--rust)';ok=false;}
+    else el.style.borderColor='';
+  });
+  if(!document.getElementById('priority-val').value){
+    msg.className='error'; msg.innerHTML='Please select a priority level in the header strip.'; msg.style.display='block'; return;
+  }
+  if(!ok){
+    msg.className='error'; msg.innerHTML='Please complete all required fields. Check each step for fields marked in red.'; msg.style.display='block'; return;
+  }
+  if(ENDPOINT==='YOUR_POWER_AUTOMATE_URL_HERE'){
+    msg.className='error'; msg.innerHTML='<strong>Setup required:</strong> Replace ENDPOINT with your Power Automate HTTP trigger URL.'; msg.style.display='block'; return;
+  }
+
+  btn.disabled=true; btn.textContent='Saving...';
+
+  var count=parseInt(document.getElementById('issue-count').value);
+  var issues=[];
+  for(var i=1;i<=count;i++){
+    issues.push({
+      issue_number:i,
+      l1_family:(document.querySelector('[name="issue_'+i+'_l1"]')||{}).value||'',
+      l2_type:(document.querySelector('[name="issue_'+i+'_l2"]')||{}).value||'',
+      l3_detail:(document.querySelector('[name="issue_'+i+'_l3"]')||{}).value||'',
+      location:(document.querySelector('[name="issue_'+i+'_location"]')||{}).value||'',
+      unit_id:(document.querySelector('[name="issue_'+i+'_unit"]')||{}).value||'',
+      description:(document.querySelector('[name="issue_'+i+'_desc"]')||{}).value||'',
+      internal_note:(document.querySelector('[name="issue_'+i+'_internal"]')||{}).value||''
+    });
+  }
+
+  var payload={
+    case_id:CASE_ID,
+    submitted_at:new Date().toISOString(),
+    priority:document.getElementById('priority-val').value,
+    agent_name:(document.querySelector('[name="agent_name"]')||{}).value||'',
+    agent_id:(document.querySelector('[name="agent_id"]')||{}).value||'',
+    call_datetime:(document.querySelector('[name="call_datetime"]')||{}).value||'',
+    customer_name:(document.querySelector('[name="customer_name"]')||{}).value||'',
+    customer_company:(document.querySelector('[name="customer_company"]')||{}).value||'',
+    customer_email:(document.querySelector('[name="customer_email"]')||{}).value||'',
+    customer_phone:(document.querySelector('[name="customer_phone"]')||{}).value||'',
+    project_name:(document.querySelector('[name="project_name"]')||{}).value||'',
+    order_number:(document.querySelector('[name="order_number"]')||{}).value||'',
+    project_address:(document.querySelector('[name="project_address"]')||{}).value||'',
+    sales_rep:(document.querySelector('[name="sales_rep"]')||{}).value||'',
+    install_date:(document.querySelector('[name="install_date"]')||{}).value||'',
+    complaint_status:(document.querySelector('[name="complaint_status"]')||{}).value||'Open',
+    product_type:(document.querySelector('[name="product_type"]')||{}).value||'',
+    product_model:(document.querySelector('[name="product_model"]')||{}).value||'',
+    unit_id:(document.querySelector('[name="unit_id"]')||{}).value||'',
+    issue_count:count,
+    issues:issues,
+    ca_action_type:(document.querySelector('[name="ca_action_type"]')||{}).value||'',
+    ca_responsible_party:(document.querySelector('[name="ca_responsible_party"]')||{}).value||'',
+    ca_auto_email:document.getElementById('auto-email').checked?'Yes':'No',
+    ca_close_date:(document.querySelector('[name="ca_close_date"]')||{}).value||'',
+    ca_investigation_required:(document.querySelector('[name="ca_investigation_required"]')||{}).value||'',
+    ca_investigation_due:(document.querySelector('[name="ca_investigation_due"]')||{}).value||'',
+    ca_investigation_results:(document.querySelector('[name="ca_investigation_results"]')||{}).value||'',
+    ca_results_date:(document.querySelector('[name="ca_results_date"]')||{}).value||'',
+    ca_proposed_action:(document.querySelector('[name="ca_proposed_action"]')||{}).value||'',
+    ca_action_due:(document.querySelector('[name="ca_action_due"]')||{}).value||'',
+    ca_resolution:(document.querySelector('[name="ca_resolution"]')||{}).value||'',
+    ca_ongoing:document.getElementById('ca-ongoing').checked?'Yes':'No',
+    ca_complete:document.getElementById('ca-complete').checked?'Yes':'No',
+    notes:notesData,
+    agent_notes:(document.querySelector('[name="agent_notes"]')||{}).value||''
+  };
+
+  fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+  .then(function(res){
+    if(res.ok||res.status===202||res.status===200){
+      msg.className='success';
+      msg.innerHTML='&#10004; Case <strong>'+CASE_ID+'</strong> saved successfully to SharePoint.';
+      msg.style.display='block';
+      btn.textContent='Saved &#10003;';
+    } else {
+      throw new Error('Server returned '+res.status);
+    }
+  })
+  .catch(function(err){
+    msg.className='error';
+    msg.innerHTML='Save failed: '+err.message+'. Please try again or contact your administrator.';
+    msg.style.display='block';
+    btn.disabled=false; btn.textContent='Save Record';
+  });
+}
+</script>
+</body>
+</html>
